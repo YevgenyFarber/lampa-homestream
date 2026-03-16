@@ -64,24 +64,13 @@ class Matcher:
 
             # Try TMDB search
             if parsed.title:
-                tmdb_match = await self._try_tmdb_match(f["id"], parsed)
+                for attempt_parsed in _match_attempts(parsed, folder_path):
+                    tmdb_match = await self._try_tmdb_match(f["id"], attempt_parsed)
+                    if tmdb_match:
+                        break
                 if tmdb_match:
                     matched_count += 1
                     continue
-
-                # Retry with cleaned-up title (common transliterations)
-                cleaned = _clean_title(parsed.title)
-                if cleaned != parsed.title:
-                    alt_parsed = ParsedMedia(
-                        title=cleaned, year=parsed.year,
-                        season=parsed.season, episode=parsed.episode,
-                        media_type=parsed.media_type,
-                        confidence_hint=parsed.confidence_hint,
-                    )
-                    tmdb_match = await self._try_tmdb_match(f["id"], alt_parsed)
-                    if tmdb_match:
-                        matched_count += 1
-                        continue
 
             unmatched_count += 1
             log.debug("unmatched_file", file=f["file_name"], parsed_title=parsed.title)
@@ -233,6 +222,85 @@ class Matcher:
         return None
 
 
+import re
+_NON_LATIN_RE = re.compile(r"[^\x00-\x7F]")
+
+
+def _match_attempts(parsed: ParsedMedia, folder_path: str) -> list[ParsedMedia]:
+    """Generate a list of ParsedMedia variants to try matching against TMDB."""
+    attempts = []
+    seen_keys: set[str] = set()
+
+    def _add(title: str | None, year: int | None):
+        if not title:
+            return
+        key = f"{title.lower()}::{year}"
+        if key in seen_keys:
+            return
+        seen_keys.add(key)
+        attempts.append(ParsedMedia(
+            title=title, year=year,
+            season=parsed.season, episode=parsed.episode,
+            media_type=parsed.media_type,
+            confidence_hint=parsed.confidence_hint,
+        ))
+
+    # 1. Original title + year
+    _add(parsed.title, parsed.year)
+
+    # 2. Without year (handles year mismatches like Fallout 2025 vs 2024)
+    if parsed.year:
+        _add(parsed.title, None)
+
+    # 3. Normalize mixed Cyrillic/Latin homoglyphs (e.g. Markoviс → Markovic)
+    if parsed.title:
+        normalized = _normalize_mixed_script(parsed.title)
+        if normalized != parsed.title:
+            _add(normalized, parsed.year)
+            if parsed.year:
+                _add(normalized, None)
+
+    # 4. Transliteration cleanup
+    if parsed.title:
+        cleaned = _clean_title(parsed.title)
+        if cleaned != parsed.title:
+            _add(cleaned, parsed.year)
+            if parsed.year:
+                _add(cleaned, None)
+
+    # 5. Cyrillic folder name (e.g. "Метод Марковича Хойер")
+    if folder_path:
+        from pathlib import PurePosixPath
+        for part in PurePosixPath(folder_path).parts:
+            if _NON_LATIN_RE.search(part) and len(part) > 2:
+                _add(part, parsed.year)
+                _add(part, None)
+                break
+
+    # 6. Folder title from parser (if different from filename title)
+    if parsed.folder_title and parsed.folder_title != parsed.title:
+        _add(parsed.folder_title, parsed.year)
+        if parsed.year:
+            _add(parsed.folder_title, None)
+
+    return attempts
+
+
+_CYRILLIC_TO_LATIN = str.maketrans(
+    "АВЕКМНОРСТУХаеорсух",
+    "ABEKMHOPCTYXaeopcyx",
+)
+
+
+def _normalize_mixed_script(text: str) -> str:
+    """Replace Cyrillic lookalike chars with Latin equivalents in mostly-Latin text."""
+    latin_count = sum(1 for c in text if c.isalpha() and ord(c) < 0x180)
+    cyrillic_count = sum(1 for c in text if c.isalpha() and 0x400 <= ord(c) <= 0x4FF)
+    if latin_count > cyrillic_count and cyrillic_count > 0:
+        return text.translate(_CYRILLIC_TO_LATIN)
+    return text
+
+
 _TRANSLITERATION_FIXES = {
     " OT ": " of the ",
     " IZ ": " from ",
@@ -277,11 +345,11 @@ def _score_results(results: list[dict], parsed: ParsedMedia, media_type: str) ->
         if best_sim > 0.95:
             score += 0.55
         elif best_sim > 0.85:
-            score += 0.45
+            score += 0.50
         elif best_sim > 0.7:
-            score += 0.30
+            score += 0.35
         elif best_sim > 0.5:
-            score += 0.15
+            score += 0.20
         else:
             continue
 

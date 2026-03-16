@@ -6,6 +6,8 @@ import re
 
 from guessit import guessit
 
+_SXXEXX_START = re.compile(r"^[Ss]\d{1,2}[Ee]\d{1,2}")
+
 
 @dataclass
 class ParsedMedia:
@@ -15,6 +17,7 @@ class ParsedMedia:
     episode: int | None = None
     media_type: str = "movie"  # "movie" or "episode"
     confidence_hint: float = 0.5
+    folder_title: str | None = None
 
 
 def parse_filename(filename: str, folder_path: str = "", share_type: str = "") -> ParsedMedia:
@@ -33,10 +36,16 @@ def parse_filename(filename: str, folder_path: str = "", share_type: str = "") -
         episode = episode[0] if episode else None
 
     confidence = 0.5
+    folder_title = None
 
-    # Enrich from folder context
     if folder_path:
         folder_info = _parse_folder_context(folder_path)
+        folder_title = folder_info.title
+
+        if _SXXEXX_START.match(filename) and folder_info.title:
+            title = folder_info.title
+            confidence += 0.2
+
         if folder_info.title and not title:
             title = folder_info.title
         if folder_info.year and not year:
@@ -46,7 +55,6 @@ def parse_filename(filename: str, folder_path: str = "", share_type: str = "") -
         if folder_info.title:
             confidence += 0.1
 
-    # Override media type from share config if guessit is uncertain
     if share_type == "tv" and media_type == "movie" and season is not None:
         media_type = "episode"
     elif share_type == "movies" and media_type == "episode" and season is None:
@@ -67,6 +75,7 @@ def parse_filename(filename: str, folder_path: str = "", share_type: str = "") -
         episode=episode,
         media_type=media_type,
         confidence_hint=confidence,
+        folder_title=folder_title,
     )
 
 
@@ -81,14 +90,18 @@ def _parse_folder_context(folder_path: str) -> ParsedMedia:
             result.season = int(season_match.group(1))
             continue
 
-        year_match = re.search(r"\((\d{4})\)|\[(\d{4})\]|\.(\d{4})\.", part)
-        if year_match:
-            result.year = int(next(g for g in year_match.groups() if g))
-            name = part[:year_match.start()].strip().rstrip("(").rstrip("[").rstrip(".").strip()
-            if name:
-                result.title = name
+        folder_guess = guessit(part, {"type": "episode"})
+        fg_title = str(folder_guess.get("title", "")) or None
+        fg_year = folder_guess.get("year")
+        fg_season = folder_guess.get("season")
 
-        elif not result.title and len(part) > 2 and not part.startswith("."):
-            result.title = part
+        if fg_year and fg_title:
+            result.year = fg_year
+            result.title = fg_title
+        elif fg_title and not result.title and len(part) > 2 and not part.startswith("."):
+            result.title = fg_title
+
+        if fg_season is not None and result.season is None:
+            result.season = fg_season
 
     return result
