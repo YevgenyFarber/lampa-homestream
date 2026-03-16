@@ -551,22 +551,28 @@
             if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
             this.background();
 
+            var target = scroll ? scroll.render() : html;
+
             Lampa.Controller.add('content', {
-                invisible: true,
+                link: this,
                 toggle: function () {
-                    Lampa.Controller.collectionSet(html);
-                    Lampa.Controller.collectionFocus(false, html);
+                    Lampa.Controller.collectionSet(target);
+                    Lampa.Controller.collectionFocus(false, target);
                 },
                 left: function () {
-                    if (Navigator.canmove('left')) Navigator.move('left');
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('left')) Navigator.move('left');
                     else Lampa.Controller.toggle('menu');
                 },
                 up: function () {
-                    if (Navigator.canmove('up')) Navigator.move('up');
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('up')) Navigator.move('up');
                     else Lampa.Controller.toggle('head');
                 },
-                right: function () { Navigator.move('right'); },
-                down: function () { Navigator.move('down'); },
+                right: function () {
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('right')) Navigator.move('right');
+                },
+                down: function () {
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('down')) Navigator.move('down');
+                },
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
@@ -701,22 +707,28 @@
             if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
             this.background();
 
+            var target = scroll ? scroll.render() : html;
+
             Lampa.Controller.add('content', {
-                invisible: true,
+                link: this,
                 toggle: function () {
-                    Lampa.Controller.collectionSet(html);
-                    Lampa.Controller.collectionFocus(false, html);
+                    Lampa.Controller.collectionSet(target);
+                    Lampa.Controller.collectionFocus(false, target);
                 },
                 left: function () {
-                    if (Navigator.canmove('left')) Navigator.move('left');
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('left')) Navigator.move('left');
                     else Lampa.Controller.toggle('menu');
                 },
                 up: function () {
-                    if (Navigator.canmove('up')) Navigator.move('up');
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('up')) Navigator.move('up');
                     else Lampa.Controller.toggle('head');
                 },
-                right: function () { Navigator.move('right'); },
-                down: function () { Navigator.move('down'); },
+                right: function () {
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('right')) Navigator.move('right');
+                },
+                down: function () {
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('down')) Navigator.move('down');
+                },
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
@@ -794,22 +806,28 @@
         this.start = function () {
             if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
 
+            var target = scroll ? scroll.render() : html;
+
             Lampa.Controller.add('content', {
-                invisible: true,
+                link: this,
                 toggle: function () {
-                    Lampa.Controller.collectionSet(html);
-                    Lampa.Controller.collectionFocus(false, html);
+                    Lampa.Controller.collectionSet(target);
+                    Lampa.Controller.collectionFocus(false, target);
                 },
                 left: function () {
-                    if (Navigator.canmove('left')) Navigator.move('left');
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('left')) Navigator.move('left');
                     else Lampa.Controller.toggle('menu');
                 },
                 up: function () {
-                    if (Navigator.canmove('up')) Navigator.move('up');
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('up')) Navigator.move('up');
                     else Lampa.Controller.toggle('head');
                 },
-                right: function () { Navigator.move('right'); },
-                down: function () { Navigator.move('down'); },
+                right: function () {
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('right')) Navigator.move('right');
+                },
+                down: function () {
+                    if (typeof Navigator !== 'undefined' && Navigator.canmove('down')) Navigator.move('down');
+                },
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
