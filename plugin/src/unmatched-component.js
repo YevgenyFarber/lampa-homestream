@@ -34,6 +34,8 @@ export function UnmatchedComponent(object) {
         scroll.minus();
         html.append(scroll.render(true));
 
+        if (Lampa.Layer && Lampa.Layer.update) Lampa.Layer.update();
+
         if (!files || !files.length) {
             var empty = new Lampa.Empty({ descr: Lampa.Lang.translate('local_media_empty_library') });
             scroll.append(empty.render(true));

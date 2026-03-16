@@ -49,6 +49,8 @@ export function EpisodeComponent(object) {
         scroll.minus();
         html.append(scroll.render(true));
 
+        if (Lampa.Layer && Lampa.Layer.update) Lampa.Layer.update();
+
         if (show.season_count && show.season_count > 1) {
             for (var s = 1; s <= show.season_count; s++) {
                 (function (sn) {

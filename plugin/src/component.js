@@ -35,6 +35,8 @@ export function MainComponent(object) {
         scroll.minus();
         html.append(scroll.render(true));
 
+        if (Lampa.Layer && Lampa.Layer.update) Lampa.Layer.update();
+
         var hasContent = false;
 
         if (lib.movies && lib.movies.length) {
