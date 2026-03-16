@@ -1,0 +1,41 @@
+server:
+  host: "0.0.0.0"
+  port: 9090
+
+shares:
+  - name: "Movies"
+    type: "movies"
+    smb_url: "smb://192.168.1.100/media/movies"
+    username: "media_user"
+    password: "${SMB_PASSWORD}"
+
+  - name: "TV Shows"
+    type: "tv"
+    smb_url: "smb://192.168.1.100/media/tv"
+    username: "media_user"
+    password: "${SMB_PASSWORD}"
+
+tmdb:
+  api_key: "${TMDB_API_KEY}"
+  language: "en"
+
+scanner:
+  extensions:
+    - ".mkv"
+    - ".mp4"
+    - ".avi"
+    - ".m4v"
+    - ".ts"
+    - ".mov"
+    - ".wmv"
+    - ".flv"
+    - ".webm"
+  exclude_patterns:
+    - "**/sample/**"
+    - "**/extras/**"
+    - "**/.recycle/**"
+    - "**/Thumbs.db"
+    - "**/.DS_Store"
+  scan_interval_hours: 6
+
+data_dir: "/data"

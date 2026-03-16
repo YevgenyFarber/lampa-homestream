@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  lampa-local-media:
+    build: .
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config:/config
+      - ./data:/data
+    environment:
+      - SMB_PASSWORD=${SMB_PASSWORD:-}
+      - TMDB_API_KEY=${TMDB_API_KEY:-}
+    restart: unless-stopped

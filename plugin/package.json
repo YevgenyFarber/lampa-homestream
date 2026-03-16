@@ -1,0 +1,13 @@
+{
+  "name": "lampa-local-media-plugin",
+  "version": "0.1.0",
+  "description": "Lampa plugin for browsing and playing local media from SMB shares",
+  "private": true,
+  "scripts": {
+    "build": "rollup -c --bundleConfigAsCjs",
+    "watch": "rollup -c -w --bundleConfigAsCjs"
+  },
+  "devDependencies": {
+    "rollup": "^4.0.0"
+  }
+}

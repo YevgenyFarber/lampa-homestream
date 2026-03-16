@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lampa-local-media-backend"
+version = "0.1.0"
+description = "Backend service for Lampa Local Media plugin — SMB scanning, TMDB matching, HTTP streaming"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "smbprotocol>=1.13.0",
+    "guessit>=3.8.0",
+    "httpx>=0.27.0",
+    "aiosqlite>=0.20.0",
+    "pyyaml>=6.0",
+    "pydantic>=2.6.0",
+    "structlog>=24.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.27.0",
+]
+
+[project.scripts]
+lampa-local-media = "app.main:cli"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

@@ -1,0 +1,158 @@
+import { PLUGIN_COMPONENT, PLUGIN_COMPONENT_EPISODES } from './constants';
+import { getEpisodes, streamUrl } from './api-client';
+import { formatFileSize } from './utils';
+
+export function EpisodeComponent(object) {
+    var html = Lampa.Template.js(PLUGIN_COMPONENT + '_main');
+    var body = html.find('.lm-main__body');
+    var scroll;
+    var show;
+
+    this.create = function () {
+        var self = this;
+        this.activity.loader(true);
+
+        show = this.activity.params && this.activity.params.local_media_show;
+        if (!show) {
+            this.activity.loader(false);
+            return;
+        }
+
+        loadSeasons(self, 1);
+    };
+
+    function loadSeasons(self, season) {
+        getEpisodes(show.tmdb_id || show.id, season)
+            .then(function (data) {
+                self.activity.loader(false);
+                renderEpisodes(data, self);
+            })
+            .catch(function (err) {
+                self.activity.loader(false);
+                var errEl = Lampa.Template.js(PLUGIN_COMPONENT + '_error');
+                errEl.find('.lm-error__text').text(err.message);
+                errEl.find('.lm-error__retry').text(Lampa.Lang.translate('local_media_retry'));
+                errEl.find('.lm-error__retry').on('hover:enter', function () {
+                    body.empty();
+                    self.activity.loader(true);
+                    loadSeasons(self, season);
+                });
+                body.append(errEl);
+            });
+    }
+
+    function renderEpisodes(data, self) {
+        scroll = new Lampa.Scroll({ mask: true, over: true });
+        body.append(scroll.render(true));
+
+        if (show.season_count && show.season_count > 1) {
+            var seasonNav = document.createElement('div');
+            seasonNav.style.cssText = 'display:flex;flex-wrap:wrap;padding:0.5em 0;margin-bottom:1em;';
+
+            for (var s = 1; s <= show.season_count; s++) {
+                (function (sn) {
+                    var btn = document.createElement('div');
+                    btn.className = 'selector';
+                    btn.style.cssText = 'padding:0.6em 1.2em;margin:0.3em;background:#404040;border-radius:0.4em;color:#fff;font-size:1.1em;';
+                    btn.textContent = Lampa.Lang.translate('local_media_season') + ' ' + sn;
+                    if (sn === (data.season || 1)) {
+                        btn.style.background = '#fff';
+                        btn.style.color = '#000';
+                    }
+                    btn.addEventListener('hover:enter', function () {
+                        body.empty();
+                        scroll = null;
+                        self.activity.loader(true);
+                        loadSeasons(self, sn);
+                    });
+                    seasonNav.appendChild(btn);
+                })(s);
+            }
+            scroll.append(seasonNav);
+        }
+
+        var episodes = data.episodes || [];
+        var playlist = [];
+
+        episodes.forEach(function (ep) {
+            playlist.push({
+                title: (show.title || '') + ' S' +
+                    String(data.season || 1).padStart(2, '0') + 'E' +
+                    String(ep.episode_number).padStart(2, '0') +
+                    (ep.title ? ' - ' + ep.title : ''),
+                url: streamUrl(ep.id)
+            });
+        });
+
+        episodes.forEach(function (ep, idx) {
+            var item = Lampa.Template.js(PLUGIN_COMPONENT + '_episode_item');
+
+            item.find('.lm-episode__num').text(
+                'E' + String(ep.episode_number).padStart(2, '0')
+            );
+            item.find('.lm-episode__title').text(ep.title || 'Episode ' + ep.episode_number);
+
+            var info = '';
+            if (ep.air_date) info += ep.air_date;
+            if (ep.file_size) info += (info ? ' • ' : '') + formatFileSize(ep.file_size);
+            item.find('.lm-episode__info').text(info);
+
+            item.on('hover:enter', function () {
+                Lampa.Player.play(playlist[idx]);
+                Lampa.Player.playlist(playlist);
+            });
+
+            item.on('hover:focus', function () {
+                if (scroll) scroll.update(item);
+                if (ep.still_url) {
+                    Lampa.Background.immediately(ep.still_url);
+                } else if (show.backdrop_url) {
+                    Lampa.Background.immediately(show.backdrop_url);
+                }
+            });
+
+            scroll.append(item);
+        });
+
+        self.activity.toggle();
+    }
+
+    this.background = function () {
+        if (show && show.backdrop_url) {
+            Lampa.Background.immediately(show.backdrop_url);
+        }
+    };
+
+    this.start = function () {
+        if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
+        this.background();
+
+        Lampa.Controller.add('content', {
+            invisible: true,
+            toggle: function () {
+                Lampa.Controller.collectionSet(html);
+                Lampa.Controller.collectionFocus(false, html);
+            },
+            left: function () {
+                if (Navigator.canmove('left')) Navigator.move('left');
+                else Lampa.Controller.toggle('menu');
+            },
+            up: function () {
+                if (Navigator.canmove('up')) Navigator.move('up');
+                else Lampa.Controller.toggle('head');
+            },
+            right: function () { Navigator.move('right'); },
+            down: function () { Navigator.move('down'); },
+            back: function () { Lampa.Activity.backward(); }
+        });
+        Lampa.Controller.toggle('content');
+    };
+
+    this.pause = function () {};
+    this.stop = function () {};
+    this.render = function () { return html; };
+    this.destroy = function () {
+        if (scroll) scroll.destroy();
+        html.remove();
+    };
+}
