@@ -46,6 +46,7 @@ export function EpisodeComponent(object) {
         scroll = null;
 
         scroll = new Lampa.Scroll({ mask: true, over: true });
+        scroll.minus();
         html.append(scroll.render(true));
 
         if (show.season_count && show.season_count > 1) {

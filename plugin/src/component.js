@@ -32,6 +32,7 @@ export function MainComponent(object) {
 
     function renderLibrary(lib, self) {
         scroll = new Lampa.Scroll({ mask: true, over: true });
+        scroll.minus();
         html.append(scroll.render(true));
 
         var hasContent = false;

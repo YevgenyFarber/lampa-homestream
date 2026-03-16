@@ -31,6 +31,7 @@ export function UnmatchedComponent(object) {
 
     function renderFiles(files, self) {
         scroll = new Lampa.Scroll({ mask: true, over: true });
+        scroll.minus();
         html.append(scroll.render(true));
 
         if (!files || !files.length) {
