@@ -79,10 +79,10 @@ export function MainComponent(object) {
                     page: 1
                 });
             });
-            unmatchedBtn.on('hover:focus', function () {
+            unmatchedBtn.on('hover:touch hover:enter hover:focus', function () {
                 last_focused = unmatchedBtn;
-                active_card_index = cards_list.length;
-                cards_list.push(unmatchedBtn);
+            });
+            unmatchedBtn.on('hover:focus', function () {
                 scroll.update(unmatchedBtn);
             });
             scroll.append(unmatchedBtn);
@@ -121,6 +121,11 @@ export function MainComponent(object) {
         if (item.season_count) info += (info ? ' • ' : '') + item.season_count + ' seasons';
         card.find('.lm-card__info').text(info);
 
+        card.on('hover:touch hover:enter hover:focus', function () {
+            last_focused = card;
+            active_card_index = cardIndex;
+        });
+
         card.on('hover:enter', function () {
             if (item.tmdb_id) {
                 Lampa.Activity.push({
@@ -142,8 +147,6 @@ export function MainComponent(object) {
         });
 
         card.on('hover:focus', function () {
-            last_focused = card;
-            active_card_index = cardIndex;
             scroll.update(card);
             if (item.backdrop_url) {
                 Lampa.Background.immediately(item.backdrop_url);
@@ -216,6 +219,12 @@ export function MainComponent(object) {
             back: function () { Lampa.Activity.backward(); }
         });
         Lampa.Controller.toggle('content');
+
+        if (last_focused && scroll) {
+            setTimeout(function () {
+                scroll.update(last_focused);
+            }, 0);
+        }
     };
 
     this.pause = function () {};
