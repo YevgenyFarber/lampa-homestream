@@ -32,12 +32,12 @@ export function MainComponent(object) {
 
     function renderLibrary(lib, self) {
         scroll = new Lampa.Scroll({ mask: true, over: true });
+        scroll.minus();
         html.append(scroll.render(true));
 
-        var headEl = document.querySelector('.head');
-        var headH = headEl ? headEl.getBoundingClientRect().height : 0;
-        scroll.render(true).style.height = (window.innerHeight - headH) + 'px';
-        scroll.render(true).style.overflow = 'hidden';
+        setTimeout(function () {
+            try { Lampa.Layer.update(); } catch(e) {}
+        }, 100);
 
         var hasContent = false;
 
@@ -86,7 +86,7 @@ export function MainComponent(object) {
     }
 
     function addSectionTitle(text) {
-        var title = $('<div class="lm-section__title" style="padding:1.2em;font-size:1.4em;font-weight:600;display:block;width:100%;"></div>');
+        var title = $('<div style="padding:1.2em;font-size:1.4em;font-weight:600;display:block;"></div>');
         title.text(text);
         scroll.append(title);
     }

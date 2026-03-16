@@ -46,12 +46,12 @@ export function EpisodeComponent(object) {
         scroll = null;
 
         scroll = new Lampa.Scroll({ mask: true, over: true });
+        scroll.minus();
         html.append(scroll.render(true));
 
-        var headEl = document.querySelector('.head');
-        var headH = headEl ? headEl.getBoundingClientRect().height : 0;
-        scroll.render(true).style.height = (window.innerHeight - headH) + 'px';
-        scroll.render(true).style.overflow = 'hidden';
+        setTimeout(function () {
+            try { Lampa.Layer.update(); } catch(e) {}
+        }, 100);
 
         if (show.season_count && show.season_count > 1) {
             for (var s = 1; s <= show.season_count; s++) {

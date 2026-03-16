@@ -31,12 +31,12 @@ export function UnmatchedComponent(object) {
 
     function renderFiles(files, self) {
         scroll = new Lampa.Scroll({ mask: true, over: true });
+        scroll.minus();
         html.append(scroll.render(true));
 
-        var headEl = document.querySelector('.head');
-        var headH = headEl ? headEl.getBoundingClientRect().height : 0;
-        scroll.render(true).style.height = (window.innerHeight - headH) + 'px';
-        scroll.render(true).style.overflow = 'hidden';
+        setTimeout(function () {
+            try { Lampa.Layer.update(); } catch(e) {}
+        }, 100);
 
         if (!files || !files.length) {
             var empty = new Lampa.Empty({ descr: Lampa.Lang.translate('local_media_empty_library') });
