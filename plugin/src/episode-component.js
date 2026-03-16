@@ -12,16 +12,7 @@ export function EpisodeComponent(object) {
         var self = this;
         this.activity.loader(true);
 
-        try {
-            var stored = Lampa.Storage.get('lm_current_show', '');
-            show = stored ? JSON.parse(stored) : null;
-        } catch (e) {
-            show = null;
-        }
-
-        if (!show) {
-            show = object.local_media_show || null;
-        }
+        show = Lampa.Storage.get('lm_current_show', null) || object.local_media_show || null;
 
         if (!show) {
             this.activity.loader(false);

@@ -43,7 +43,7 @@ export function registerPlayButton() {
 
             btn.on('hover:enter', function () {
                 if (mediaType === 'tv') {
-                    Lampa.Storage.set('lm_current_show', JSON.stringify(localItem));
+                    Lampa.Storage.set('lm_current_show', localItem);
                     Lampa.Activity.push({
                         url: '',
                         title: (localItem.title || card.title) + ' — ' + Lampa.Lang.translate('local_media_play_local'),
