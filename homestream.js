@@ -568,8 +568,10 @@
             Lampa.Controller.add('content', {
                 invisible: true,
                 toggle: function () {
-                    Lampa.Controller.collectionSet(html);
-                    Lampa.Controller.collectionFocus(last_focused || false, html);
+                    if (scroll) {
+                        Lampa.Controller.collectionSet(scroll.render());
+                        Lampa.Controller.collectionFocus(last_focused || false, scroll.render());
+                    }
                 },
                 left: function () {
                     if (Navigator.canmove('left')) Navigator.move('left');
@@ -588,6 +590,12 @@
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
+
+            if (last_focused && scroll) {
+                setTimeout(function () {
+                    scroll.update(last_focused);
+                }, 10);
+            }
         };
 
         this.pause = function () {};
