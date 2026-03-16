@@ -6,8 +6,14 @@ export function MainComponent(object) {
     var html = $('<div></div>');
     var scroll, data;
     var last_focused;
+    var cards_list = [];
+    var active_card_index = -1;
+    var created = false;
 
     this.create = function () {
+        if (created) return;
+        created = true;
+
         var self = this;
         this.activity.loader(true);
 
@@ -25,6 +31,7 @@ export function MainComponent(object) {
             })
             .catch(function (err) {
                 self.activity.loader(false);
+                created = false;
                 showError(err.message, function () {
                     self.create();
                 });
@@ -74,6 +81,8 @@ export function MainComponent(object) {
             });
             unmatchedBtn.on('hover:focus', function () {
                 last_focused = unmatchedBtn;
+                active_card_index = cards_list.length;
+                cards_list.push(unmatchedBtn);
                 scroll.update(unmatchedBtn);
             });
             scroll.append(unmatchedBtn);
@@ -95,6 +104,8 @@ export function MainComponent(object) {
 
     function addCard(item, mediaType) {
         var card = Lampa.Template.js(PLUGIN_COMPONENT + '_card');
+        var cardIndex = cards_list.length;
+        cards_list.push(card);
 
         if (item.poster_url) {
             var el = card.find('.lm-card__img');
@@ -132,6 +143,7 @@ export function MainComponent(object) {
 
         card.on('hover:focus', function () {
             last_focused = card;
+            active_card_index = cardIndex;
             scroll.update(card);
             if (item.backdrop_url) {
                 Lampa.Background.immediately(item.backdrop_url);
@@ -167,7 +179,7 @@ export function MainComponent(object) {
         if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
         this.background();
 
-        var restore = last_focused;
+        var need_restore = active_card_index >= 0 && active_card_index < cards_list.length;
 
         Lampa.Controller.add('content', {
             invisible: true,
@@ -195,11 +207,12 @@ export function MainComponent(object) {
         });
         Lampa.Controller.toggle('content');
 
-        if (restore && scroll) {
+        if (need_restore && scroll) {
+            var target = cards_list[active_card_index];
             setTimeout(function () {
-                Lampa.Controller.collectionFocus(restore, scroll.render());
-                scroll.update(restore);
-            }, 120);
+                scroll.immediate(target);
+                Lampa.Controller.collectionFocus(target, scroll.render());
+            }, 10);
         }
     };
 
