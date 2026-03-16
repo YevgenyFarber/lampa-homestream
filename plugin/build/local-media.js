@@ -873,10 +873,6 @@
         };
     }
 
-    /**
-     * Injects a "Play Local" button into native Lampa TMDB detail pages
-     * when the displayed item has a local file available.
-     */
     function registerPlayButton() {
         Lampa.Listener.follow('full', function (e) {
             if (e.type !== 'complite') return;
@@ -891,12 +887,18 @@
             var tmdbId = parseInt(card.id);
             if (!tmdbId) return;
 
+            var mediaType = card.name ? 'tv' : 'movie';
+
             getLibrary(true).then(function (lib) {
-                var localItem = findLocalItem(lib, tmdbId, card.name ? 'tv' : 'movie');
+                var localItem = findLocalItem(lib, tmdbId, mediaType);
                 if (!localItem) return;
 
                 var btnArea = null;
-                if (e.body) {
+                if (e.object && e.object.activity && e.object.activity.render) {
+                    var render = e.object.activity.render();
+                    btnArea = $(render).find('.full-start-new__buttons, .full-start__buttons');
+                }
+                if ((!btnArea || !btnArea.length) && e.body) {
                     btnArea = e.body.find('.full-start-new__buttons, .full-start__buttons');
                 }
                 if (!btnArea || !btnArea.length) return;
@@ -911,13 +913,98 @@
                 '</div>');
 
                 btn.on('hover:enter', function () {
-                    playExternal(streamUrl(localItem.id), localItem.title || card.title || card.name);
+                    if (mediaType === 'tv') {
+                        showSeasonPicker(localItem);
+                    } else {
+                        playExternal(streamUrl(localItem.id), localItem.title || card.title);
+                    }
                 });
 
                 btnArea.append(btn);
-            }).catch(function () {
-                // library not available, no button injected
+            }).catch(function () {});
+        });
+    }
+
+    function showSeasonPicker(show) {
+        var seasonCount = show.season_count || 1;
+
+        if (seasonCount === 1) {
+            loadAndShowEpisodes(show, 1);
+            return;
+        }
+
+        var items = [];
+        for (var s = 1; s <= seasonCount; s++) {
+            items.push({
+                title: Lampa.Lang.translate('local_media_season') + ' ' + s,
+                season: s
             });
+        }
+
+        Lampa.Select.show({
+            title: show.title || 'Select Season',
+            items: items,
+            onSelect: function (a) {
+                loadAndShowEpisodes(show, a.season);
+            },
+            onBack: function () {
+                Lampa.Controller.toggle('content');
+            }
+        });
+    }
+
+    function loadAndShowEpisodes(show, season) {
+        Lampa.Noty.show(Lampa.Lang.translate('local_media_loading'));
+
+        getEpisodes(show.tmdb_id || show.id, season).then(function (data) {
+            var episodes = data.episodes || [];
+            if (!episodes.length) {
+                Lampa.Noty.show('No episodes found');
+                return;
+            }
+
+            var playlist = [];
+            var items = [];
+
+            episodes.forEach(function (ep) {
+                var epTitle = 'S' + String(season).padStart(2, '0') + 'E' +
+                    String(ep.episode_number).padStart(2, '0');
+                if (ep.title) epTitle += ' — ' + ep.title;
+
+                var info = '';
+                if (ep.file_size) info = ' (' + formatFileSize(ep.file_size) + ')';
+
+                playlist.push({
+                    title: (show.title || '') + ' ' + epTitle,
+                    url: streamUrl(ep.id)
+                });
+
+                items.push({
+                    title: epTitle + info,
+                    idx: items.length
+                });
+            });
+
+            Lampa.Select.show({
+                title: show.title + ' — ' + Lampa.Lang.translate('local_media_season') + ' ' + season,
+                items: items,
+                onSelect: function (a) {
+                    playExternalWithPlaylist(
+                        playlist[a.idx].url,
+                        playlist[a.idx].title,
+                        playlist
+                    );
+                },
+                onBack: function () {
+                    if (show.season_count > 1) {
+                        showSeasonPicker(show);
+                    } else {
+                        Lampa.Controller.toggle('content');
+                    }
+                }
+            });
+        }).catch(function (err) {
+            Lampa.Noty.show(Lampa.Lang.translate('local_media_error') + ': ' + err.message);
         });
     }
 
@@ -935,7 +1022,6 @@
             }
         }
 
-        // search both lists as fallback
         var all = (lib.movies || []).concat(lib.shows || []);
         for (var k = 0; k < all.length; k++) {
             if (all[k].tmdb_id === tmdbId) return all[k];
