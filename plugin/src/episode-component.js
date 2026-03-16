@@ -3,10 +3,10 @@ import { getEpisodes, streamUrl } from './api-client';
 import { formatFileSize, playExternalWithPlaylist } from './utils';
 
 export function EpisodeComponent(object) {
-    var html = Lampa.Template.js(PLUGIN_COMPONENT + '_main');
-    var body = html.find('.lm-main__body');
+    var html = $('<div></div>');
     var scroll;
     var show;
+    var last;
 
     this.create = function () {
         var self = this;
@@ -33,17 +33,23 @@ export function EpisodeComponent(object) {
                 errEl.find('.lm-error__text').text(err.message);
                 errEl.find('.lm-error__retry').text(Lampa.Lang.translate('local_media_retry'));
                 errEl.find('.lm-error__retry').on('hover:enter', function () {
-                    body.empty();
+                    html.empty();
+                    scroll = null;
+                    last = null;
                     self.activity.loader(true);
                     loadSeasons(self, season);
                 });
-                body.append(errEl);
+                html.append(errEl);
             });
     }
 
     function renderEpisodes(data, self) {
-        scroll = new Lampa.Scroll({ mask: true, over: true });
-        body.append(scroll.render());
+        html.empty();
+        scroll = null;
+        last = null;
+
+        scroll = new Lampa.Scroll({ mask: true, over: true, step: 300 });
+        var body = $('<div class="lm-episodes-content"></div>');
 
         if (show.season_count && show.season_count > 1) {
             for (var s = 1; s <= show.season_count; s++) {
@@ -53,15 +59,17 @@ export function EpisodeComponent(object) {
                     var btn = $('<div class="selector" style="padding:0.6em 1.2em;margin:0.3em;border-radius:0.4em;font-size:1.1em;display:inline-block;' + bg + '"></div>');
                     btn.text(Lampa.Lang.translate('local_media_season') + ' ' + sn);
                     btn.on('hover:enter', function () {
-                        body.empty();
+                        html.empty();
                         scroll = null;
+                        last = null;
                         self.activity.loader(true);
                         loadSeasons(self, sn);
                     });
                     btn.on('hover:focus', function () {
-                        scroll.update(btn);
+                        last = $(this)[0];
+                        scroll.update($(this));
                     });
-                    scroll.append(btn);
+                    body.append(btn);
                 })(s);
             }
         }
@@ -97,7 +105,8 @@ export function EpisodeComponent(object) {
             });
 
             item.on('hover:focus', function () {
-                scroll.update(item);
+                last = $(this)[0];
+                scroll.update($(this));
                 if (ep.still_url) {
                     Lampa.Background.immediately(ep.still_url);
                 } else if (show.backdrop_url) {
@@ -105,8 +114,12 @@ export function EpisodeComponent(object) {
                 }
             });
 
-            scroll.append(item);
+            body.append(item);
         });
+
+        scroll.minus();
+        scroll.append(body);
+        html.append(scroll.render());
 
         self.activity.toggle();
     }
@@ -121,13 +134,11 @@ export function EpisodeComponent(object) {
         if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
         this.background();
 
-        var target = scroll ? scroll.render() : html;
-
         Lampa.Controller.add('content', {
             link: this,
             toggle: function () {
-                Lampa.Controller.collectionSet(target);
-                Lampa.Controller.collectionFocus(false, target);
+                Lampa.Controller.collectionSet(scroll.render());
+                Lampa.Controller.collectionFocus(last || false, scroll.render());
             },
             left: function () {
                 if (typeof Navigator !== 'undefined' && Navigator.canmove('left')) Navigator.move('left');

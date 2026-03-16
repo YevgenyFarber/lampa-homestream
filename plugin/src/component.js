@@ -3,9 +3,9 @@ import { getLibrary, streamUrl } from './api-client';
 import { getBackendUrl, formatFileSize, playExternal } from './utils';
 
 export function MainComponent(object) {
-    var html = Lampa.Template.js(PLUGIN_COMPONENT + '_main');
-    var body = html.find('.lm-main__body');
-    var scroll, data;
+    var html = $('<div></div>');
+    var body = $('<div class="lm-content"></div>');
+    var scroll, data, last;
 
     this.create = function () {
         var self = this;
@@ -32,8 +32,7 @@ export function MainComponent(object) {
     };
 
     function renderLibrary(lib, self) {
-        scroll = new Lampa.Scroll({ mask: true, over: true });
-        body.append(scroll.render());
+        scroll = new Lampa.Scroll({ mask: true, over: true, step: 300 });
 
         var hasContent = false;
 
@@ -68,14 +67,20 @@ export function MainComponent(object) {
                 });
             });
             unmatchedBtn.on('hover:focus', function () {
-                scroll.update(unmatchedBtn);
+                last = $(this)[0];
+                scroll.update($(this));
             });
-            scroll.append(unmatchedBtn);
+            body.append(unmatchedBtn);
         }
 
         if (!hasContent) {
             showEmpty(Lampa.Lang.translate('local_media_empty_library'));
+            return;
         }
+
+        scroll.minus();
+        scroll.append(body);
+        html.append(scroll.render());
 
         self.activity.toggle();
     }
@@ -83,7 +88,7 @@ export function MainComponent(object) {
     function addSectionTitle(text) {
         var title = $('<div class="lm-section__title" style="clear:both;padding:1.2em;font-size:1.4em;font-weight:600;"></div>');
         title.text(text);
-        scroll.append(title);
+        body.append(title);
     }
 
     function addCard(item, mediaType) {
@@ -132,20 +137,20 @@ export function MainComponent(object) {
         });
 
         card.on('hover:focus', function () {
-            scroll.update(card);
+            last = $(this)[0];
+            scroll.update($(this));
             if (item.backdrop_url) {
                 Lampa.Background.immediately(item.backdrop_url);
             }
         });
 
-        scroll.append(card);
+        body.append(card);
     }
 
     function showEmpty(text) {
         var empty = new Lampa.Empty({ descr: text });
         html.empty();
         html.append(empty.render(true));
-        this && this.start && (this.start = empty.start);
     }
 
     function showError(message, retryFn) {
@@ -155,8 +160,8 @@ export function MainComponent(object) {
         );
         errEl.find('.lm-error__retry').text(Lampa.Lang.translate('local_media_retry'));
         errEl.find('.lm-error__retry').on('hover:enter', retryFn);
-        body.empty();
-        body.append(errEl);
+        html.empty();
+        html.append(errEl);
     }
 
     this.background = function () {
@@ -167,13 +172,11 @@ export function MainComponent(object) {
         if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
         this.background();
 
-        var target = scroll ? scroll.render() : html;
-
         Lampa.Controller.add('content', {
             link: this,
             toggle: function () {
-                Lampa.Controller.collectionSet(target);
-                Lampa.Controller.collectionFocus(false, target);
+                Lampa.Controller.collectionSet(scroll.render());
+                Lampa.Controller.collectionFocus(last || false, scroll.render());
             },
             left: function () {
                 if (typeof Navigator !== 'undefined' && Navigator.canmove('left')) Navigator.move('left');

@@ -192,8 +192,10 @@ class Matcher:
                     "year": year,
                 }
 
-            poster = TmdbClient.poster_url(data.get("poster_path"))
-            backdrop = TmdbClient.backdrop_url(data.get("backdrop_path"))
+            poster_path = _pick_default_image(data, "posters") or data.get("poster_path")
+            backdrop_path = _pick_default_image(data, "backdrops") or data.get("backdrop_path")
+            poster = TmdbClient.poster_url(poster_path)
+            backdrop = TmdbClient.backdrop_url(backdrop_path)
             await self._db.cache_tmdb(tmdb_id, media_type, meta, poster, backdrop)
 
         except Exception as e:
@@ -224,6 +226,17 @@ class Matcher:
 
 import re
 _NON_LATIN_RE = re.compile(r"[^\x00-\x7F]")
+
+
+def _pick_default_image(data: dict, key: str) -> str | None:
+    """Pick the best non-localized image from TMDB append_to_response=images."""
+    images = data.get("images", {}).get(key, [])
+    if not images:
+        return None
+    for img in images:
+        if img.get("iso_639_1") is None or img.get("iso_639_1") == "en":
+            return img.get("file_path")
+    return images[0].get("file_path")
 
 
 def _match_attempts(parsed: ParsedMedia, folder_path: str) -> list[ParsedMedia]:

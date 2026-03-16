@@ -3,9 +3,9 @@ import { getUnmatched, streamUrl } from './api-client';
 import { formatFileSize, playExternal } from './utils';
 
 export function UnmatchedComponent(object) {
-    var html = Lampa.Template.js(PLUGIN_COMPONENT + '_main');
-    var body = html.find('.lm-main__body');
+    var html = $('<div></div>');
     var scroll;
+    var last;
 
     this.create = function () {
         var self = this;
@@ -22,39 +22,44 @@ export function UnmatchedComponent(object) {
                 errEl.find('.lm-error__text').text(err.message);
                 errEl.find('.lm-error__retry').text(Lampa.Lang.translate('local_media_retry'));
                 errEl.find('.lm-error__retry').on('hover:enter', function () {
-                    body.empty();
+                    html.empty();
+                    scroll = null;
+                    last = null;
                     self.create();
                 });
-                body.append(errEl);
+                html.append(errEl);
             });
     };
 
     function renderFiles(files, self) {
-        scroll = new Lampa.Scroll({ mask: true, over: true });
-        body.append(scroll.render());
+        scroll = new Lampa.Scroll({ mask: true, over: true, step: 300 });
+        var body = $('<div class="lm-unmatched-content"></div>');
 
         if (!files || !files.length) {
             var empty = new Lampa.Empty({ descr: Lampa.Lang.translate('local_media_empty_library') });
-            scroll.append(empty.render(true));
-            self.activity.toggle();
-            return;
+            body.append(empty.render(true));
+        } else {
+            files.forEach(function (file) {
+                var item = Lampa.Template.js(PLUGIN_COMPONENT + '_unmatched_item');
+                item.find('.lm-unmatched__name').text(file.file_name || file.file_path || 'Unknown');
+                item.find('.lm-unmatched__size').text(formatFileSize(file.file_size));
+
+                item.on('hover:enter', function () {
+                    playExternal(streamUrl(file.id), file.file_name || file.file_path);
+                });
+
+                item.on('hover:focus', function () {
+                    last = $(this)[0];
+                    scroll.update($(this));
+                });
+
+                body.append(item);
+            });
         }
 
-        files.forEach(function (file) {
-            var item = Lampa.Template.js(PLUGIN_COMPONENT + '_unmatched_item');
-            item.find('.lm-unmatched__name').text(file.file_name || file.file_path || 'Unknown');
-            item.find('.lm-unmatched__size').text(formatFileSize(file.file_size));
-
-            item.on('hover:enter', function () {
-                playExternal(streamUrl(file.id), file.file_name || file.file_path);
-            });
-
-            item.on('hover:focus', function () {
-                scroll.update(item);
-            });
-
-            scroll.append(item);
-        });
+        scroll.minus();
+        scroll.append(body);
+        html.append(scroll.render());
 
         self.activity.toggle();
     }
@@ -62,13 +67,11 @@ export function UnmatchedComponent(object) {
     this.start = function () {
         if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
 
-        var target = scroll ? scroll.render() : html;
-
         Lampa.Controller.add('content', {
             link: this,
             toggle: function () {
-                Lampa.Controller.collectionSet(target);
-                Lampa.Controller.collectionFocus(false, target);
+                Lampa.Controller.collectionSet(scroll.render());
+                Lampa.Controller.collectionFocus(last || false, scroll.render());
             },
             left: function () {
                 if (typeof Navigator !== 'undefined' && Navigator.canmove('left')) Navigator.move('left');

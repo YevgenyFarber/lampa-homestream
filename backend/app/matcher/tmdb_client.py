@@ -75,10 +75,16 @@ class TmdbClient:
         return results
 
     async def get_movie(self, movie_id: int) -> dict:
-        return await self._get(f"movie/{movie_id}")
+        return await self._get(f"movie/{movie_id}", {
+            "append_to_response": "images",
+            "include_image_language": "en,null",
+        })
 
     async def get_tv(self, tv_id: int) -> dict:
-        return await self._get(f"tv/{tv_id}")
+        return await self._get(f"tv/{tv_id}", {
+            "append_to_response": "images",
+            "include_image_language": "en,null",
+        })
 
     async def get_tv_season(self, tv_id: int, season: int) -> dict:
         return await self._get(f"tv/{tv_id}/season/{season}")
