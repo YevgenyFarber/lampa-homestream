@@ -234,29 +234,6 @@
         // Button focus
         '.lm-btn.focus, .lm-btn.hover { background: #fff !important; color: #000 !important; }' +
 
-        // Episode overlay panel
-        '.lm-episodes-overlay { position: fixed; top: 0; right: -30em; width: 30em; height: 100%; z-index: 999; transition: right 0.3s ease; }' +
-        '.lm-episodes-overlay--visible { right: 0; }' +
-        '.lm-episodes-panel { width: 100%; height: 100%; background: rgba(20,20,20,0.97); display: flex; flex-direction: column; }' +
-        '.lm-episodes-panel__title { padding: 1.5em; font-size: 1.3em; font-weight: 600; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }' +
-        '.lm-episodes-panel__list { flex: 1; overflow: hidden; }' +
-
-        // Episode row
-        '.lm-ep-row { display: flex; align-items: center; padding: 0.8em 1.2em; cursor: pointer; position: relative; }' +
-        '.lm-ep-row.focus, .lm-ep-row.hover { background: rgba(255,255,255,0.1); }' +
-        '.lm-ep-row.focus::before, .lm-ep-row.hover::before {' +
-            'content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 0.25em; background: #3388ff;' +
-        '}' +
-        '.lm-ep-row__thumb { width: 8em; height: 4.5em; border-radius: 0.4em; background-size: cover; background-position: center; background-color: #333; flex-shrink: 0; position: relative; overflow: hidden; }' +
-        '.lm-ep-row__num { position: absolute; bottom: 0.3em; left: 0.4em; background: rgba(0,0,0,0.7); color: #fff; padding: 0.1em 0.4em; border-radius: 0.2em; font-size: 0.85em; font-weight: 700; }' +
-        '.lm-ep-row__num-only { width: 3em; text-align: center; font-size: 1.3em; font-weight: 700; color: rgba(255,255,255,0.4); flex-shrink: 0; }' +
-        '.lm-ep-row__info { flex: 1; margin-left: 1em; overflow: hidden; }' +
-        '.lm-ep-row__title { font-size: 1.1em; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
-        '.lm-ep-row__sub { font-size: 0.85em; color: rgba(255,255,255,0.5); margin-top: 0.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
-        '.lm-ep-row__progress { height: 0.2em; background: rgba(255,255,255,0.15); border-radius: 0.1em; margin-top: 0.4em; overflow: hidden; }' +
-        '.lm-ep-row__progress-fill { height: 100%; background: #3388ff; border-radius: 0.1em; transition: width 0.3s; }' +
-        '.lm-ep-row__progress-fill--done { background: #4caf50; }' +
-
         '</style>');
     }
 
@@ -289,25 +266,6 @@
             AndroidJS.openPlayer(url, json);
         } else {
             Lampa.Player.play({ title: title || '', url: url });
-        }
-    }
-
-    /**
-     * Play a video with playlist support via external player.
-     */
-    function playExternalWithPlaylist(url, title, playlist) {
-        if (typeof AndroidJS !== 'undefined' && AndroidJS.openPlayer) {
-            var json = JSON.stringify({
-                url: url,
-                title: title || '',
-                playlist: playlist || []
-            });
-            AndroidJS.openPlayer(url, json);
-        } else {
-            Lampa.Player.play({ title: title || '', url: url });
-            if (playlist && playlist.length) {
-                Lampa.Player.playlist(playlist);
-            }
         }
     }
 
@@ -642,21 +600,26 @@
         var html = $('<div></div>');
         var scroll;
         var show;
+        var season;
 
         this.create = function () {
             var self = this;
             this.activity.loader(true);
 
-            show = this.activity.params && this.activity.params.local_media_show;
+            show = object.local_media_show;
+            season = object.local_media_season || (show.seasons && show.seasons[0]) || 1;
+
             if (!show) {
                 this.activity.loader(false);
                 return;
             }
 
-            loadSeasons(self, 1);
+            loadEpisodes(self, season);
         };
 
-        function loadSeasons(self, season) {
+        function loadEpisodes(self, s) {
+            season = s;
+
             getEpisodes(show.tmdb_id || show.id, season)
                 .then(function (data) {
                     self.activity.loader(false);
@@ -664,35 +627,21 @@
                 })
                 .catch(function (err) {
                     self.activity.loader(false);
-                    var errEl = Lampa.Template.js(PLUGIN_COMPONENT + '_error');
-                    errEl.find('.lm-error__text').text(err.message);
-                    errEl.find('.lm-error__retry').text(Lampa.Lang.translate('local_media_retry'));
-                    errEl.find('.lm-error__retry').on('hover:enter', function () {
-                        html.empty();
-                        scroll = null;
-                        self.activity.loader(true);
-                        loadSeasons(self, season);
-                    });
-                    html.append(errEl);
+                    Lampa.Noty.show(err.message);
                 });
         }
 
         function renderEpisodes(data, self) {
             html.empty();
-            scroll = null;
-
             scroll = new Lampa.Scroll({ mask: true, over: true });
             scroll.minus();
             html.append(scroll.render(true));
 
-            setTimeout(function () {
-                try { Lampa.Layer.update(); } catch(e) {}
-            }, 100);
-
-            if (show.season_count && show.season_count > 1) {
-                for (var s = 1; s <= show.season_count; s++) {
+            var seasons = show.seasons || [];
+            if (seasons.length > 1) {
+                for (var i = 0; i < seasons.length; i++) {
                     (function (sn) {
-                        var active = sn === (data.season || 1);
+                        var active = sn === season;
                         var bg = active ? 'background:#fff;color:#000;' : 'background:#404040;color:#fff;';
                         var btn = $('<div class="selector" style="padding:0.6em 1.2em;margin:0.3em;border-radius:0.4em;font-size:1.1em;display:inline-block;' + bg + '"></div>');
                         btn.text(Lampa.Lang.translate('local_media_season') + ' ' + sn);
@@ -700,13 +649,13 @@
                             html.empty();
                             scroll = null;
                             self.activity.loader(true);
-                            loadSeasons(self, sn);
+                            loadEpisodes(self, sn);
                         });
                         btn.on('hover:focus', function () {
                             scroll.update(btn);
                         });
                         scroll.append(btn);
-                    })(s);
+                    })(seasons[i]);
                 }
             }
 
@@ -714,30 +663,51 @@
             var playlist = [];
 
             episodes.forEach(function (ep) {
+                var epLabel = 'S' + String(season).padStart(2, '0') + 'E' +
+                    String(ep.episode_number).padStart(2, '0');
                 playlist.push({
-                    title: (show.title || '') + ' S' +
-                        String(data.season || 1).padStart(2, '0') + 'E' +
-                        String(ep.episode_number).padStart(2, '0') +
-                        (ep.title ? ' - ' + ep.title : ''),
+                    title: (show.title || '') + ' ' + epLabel + (ep.title ? ' — ' + ep.title : ''),
                     url: streamUrl(ep.id)
                 });
             });
 
             episodes.forEach(function (ep, idx) {
-                var item = Lampa.Template.js(PLUGIN_COMPONENT + '_episode_item');
+                var epLabel = 'S' + String(season).padStart(2, '0') + 'E' +
+                    String(ep.episode_number).padStart(2, '0');
+                var sizeStr = ep.file_size ? formatFileSize(ep.file_size) : '';
 
-                item.find('.lm-episode__num').text(
-                    'E' + String(ep.episode_number).padStart(2, '0')
+                var element = {
+                    title: epLabel + (ep.title ? ' — ' + ep.title : ''),
+                    quality: sizeStr,
+                    info: ep.air_date ? ' • ' + ep.air_date : ''
+                };
+
+                var item = Lampa.Template.get('online', element);
+                item.addClass('video--stream selector');
+
+                var hash = Lampa.Utils.hash(
+                    show.tmdb_id + '_s' + season + '_e' + ep.episode_number
                 );
-                item.find('.lm-episode__title').text(ep.title || 'Episode ' + ep.episode_number);
-
-                var info = '';
-                if (ep.air_date) info += ep.air_date;
-                if (ep.file_size) info += (info ? ' • ' : '') + formatFileSize(ep.file_size);
-                item.find('.lm-episode__info').text(info);
+                var view = Lampa.Timeline.view(hash);
+                item.append(Lampa.Timeline.render(view));
 
                 item.on('hover:enter', function () {
-                    playExternalWithPlaylist(playlist[idx].url, playlist[idx].title, playlist);
+                    Lampa.Player.play({
+                        url: playlist[idx].url,
+                        title: playlist[idx].title,
+                        timeline: view
+                    });
+
+                    Lampa.Player.playlist(playlist.map(function (p, pi) {
+                        var epHash = Lampa.Utils.hash(
+                            show.tmdb_id + '_s' + season + '_e' + episodes[pi].episode_number
+                        );
+                        return {
+                            url: p.url,
+                            title: p.title,
+                            timeline: Lampa.Timeline.view(epHash)
+                        };
+                    }));
                 });
 
                 item.on('hover:focus', function () {
@@ -766,7 +736,6 @@
             this.background();
 
             Lampa.Controller.add('content', {
-                invisible: true,
                 toggle: function () {
                     Lampa.Controller.collectionSet(html);
                     Lampa.Controller.collectionFocus(false, html);
@@ -896,83 +865,6 @@
         };
     }
 
-    var STORAGE_KEY = 'lm_watch_progress';
-
-    function _getAll() {
-        return Lampa.Storage.get(STORAGE_KEY, {});
-    }
-
-    function _saveAll(data) {
-        Lampa.Storage.set(STORAGE_KEY, data);
-    }
-
-    function getProgress(episodeId) {
-        var all = _getAll();
-        return all[episodeId] || null;
-    }
-
-    function setProgress(episodeId, time, duration) {
-        var all = _getAll();
-        var percent = duration > 0 ? Math.min((time / duration) * 100, 100) : 0;
-        all[episodeId] = {
-            time: Math.floor(time),
-            duration: Math.floor(duration),
-            percent: Math.round(percent),
-            timestamp: Date.now()
-        };
-        _saveAll(all);
-    }
-
-    function markStarted(episodeId) {
-        var all = _getAll();
-        if (!all[episodeId]) {
-            all[episodeId] = { time: 0, duration: 0, percent: 0, timestamp: Date.now() };
-            _saveAll(all);
-        }
-    }
-
-    function markWatched(episodeId) {
-        var all = _getAll();
-        all[episodeId] = { time: 0, duration: 0, percent: 100, timestamp: Date.now() };
-        _saveAll(all);
-    }
-
-    function initPlayerTracking() {
-        var currentEpisodeId = null;
-
-        Lampa.Storage.listener.follow('change', function (e) {
-            if (e.name === 'lm_now_playing') {
-                currentEpisodeId = e.value || null;
-            }
-        });
-
-        Lampa.Listener.follow('player', function (e) {
-            if (!currentEpisodeId) {
-                currentEpisodeId = Lampa.Storage.get('lm_now_playing', null);
-            }
-            if (!currentEpisodeId) return;
-
-            if (e.type === 'timeupdate') {
-                var time = e.current || 0;
-                var duration = e.duration || 0;
-                if (duration > 0 && time > 5) {
-                    setProgress(currentEpisodeId, time, duration);
-                }
-            }
-
-            if (e.type === 'ended') {
-                markWatched(currentEpisodeId);
-                Lampa.Storage.set('lm_now_playing', '');
-                currentEpisodeId = null;
-            }
-
-            if (e.type === 'destroy') {
-                Lampa.Storage.set('lm_now_playing', '');
-                currentEpisodeId = null;
-            }
-        });
-    }
-
     function registerPlayButton() {
         Lampa.Listener.follow('full', function (e) {
             if (e.type !== 'complite') return;
@@ -1014,205 +906,27 @@
 
                 btn.on('hover:enter', function () {
                     if (mediaType === 'tv') {
-                        showSeasonPicker(localItem);
+                        Lampa.Activity.push({
+                            url: '',
+                            title: (localItem.title || card.title) + ' — ' + Lampa.Lang.translate('local_media_play_local'),
+                            component: PLUGIN_COMPONENT_EPISODES,
+                            page: 1,
+                            local_media_show: localItem
+                        });
                     } else {
-                        markStarted(localItem.id);
-                        Lampa.Storage.set('lm_now_playing', localItem.id);
-                        playExternal(streamUrl(localItem.id), localItem.title || card.title);
+                        var hash = Lampa.Utils.hash('lm_movie_' + localItem.tmdb_id);
+                        var view = Lampa.Timeline.view(hash);
+                        Lampa.Player.play({
+                            url: streamUrl(localItem.id),
+                            title: localItem.title || card.title,
+                            timeline: view
+                        });
                     }
                 });
 
                 btnArea.append(btn);
             }).catch(function () {});
         });
-    }
-
-    function showSeasonPicker(show) {
-        var seasons = show.seasons || [];
-        if (!seasons.length) seasons = [1];
-
-        if (seasons.length === 1) {
-            loadAndShowEpisodes(show, seasons[0]);
-            return;
-        }
-
-        var items = [];
-        for (var i = 0; i < seasons.length; i++) {
-            items.push({
-                title: Lampa.Lang.translate('local_media_season') + ' ' + seasons[i],
-                season: seasons[i]
-            });
-        }
-
-        Lampa.Select.show({
-            title: show.title || 'Select Season',
-            items: items,
-            onSelect: function (a) {
-                loadAndShowEpisodes(show, a.season);
-            },
-            onBack: function () {
-                Lampa.Controller.toggle('content');
-            }
-        });
-    }
-
-    function loadAndShowEpisodes(show, season) {
-        Lampa.Noty.show(Lampa.Lang.translate('local_media_loading'));
-
-        getEpisodes(show.tmdb_id || show.id, season).then(function (data) {
-            var episodes = data.episodes || [];
-            if (!episodes.length) {
-                Lampa.Noty.show('No episodes found');
-                return;
-            }
-
-            var playlist = [];
-            episodes.forEach(function (ep) {
-                var epLabel = 'S' + String(season).padStart(2, '0') + 'E' +
-                    String(ep.episode_number).padStart(2, '0');
-                playlist.push({
-                    title: (show.title || '') + ' ' + epLabel + (ep.title ? ' — ' + ep.title : ''),
-                    url: streamUrl(ep.id)
-                });
-            });
-
-            var items = [];
-            episodes.forEach(function (ep, idx) {
-                var epLabel = 'S' + String(season).padStart(2, '0') + 'E' +
-                    String(ep.episode_number).padStart(2, '0');
-                var sizeStr = ep.file_size ? formatFileSize(ep.file_size) : '';
-                var progress = getProgress(ep.id);
-
-                items.push({
-                    id: ep.id,
-                    title: ep.title || ('Episode ' + ep.episode_number),
-                    subtitle: epLabel + (ep.air_date ? ' • ' + formatDate(ep.air_date) : '') + (sizeStr ? ' • ' + sizeStr : ''),
-                    image: ep.still_url || '',
-                    idx: idx,
-                    episode_number: ep.episode_number,
-                    progress: progress ? progress.percent : -1
-                });
-            });
-
-            showEpisodeOverlay(show, season, items, playlist);
-        }).catch(function (err) {
-            Lampa.Noty.show(Lampa.Lang.translate('local_media_error') + ': ' + err.message);
-        });
-    }
-
-    function showEpisodeOverlay(show, season, items, playlist) {
-        var overlay = $('<div class="lm-episodes-overlay"></div>');
-        var panel = $('<div class="lm-episodes-panel"></div>');
-        var title = $('<div class="lm-episodes-panel__title"></div>');
-        title.text(show.title + ' — ' + Lampa.Lang.translate('local_media_season') + ' ' + season);
-        panel.append(title);
-
-        $('<div class="lm-episodes-panel__list"></div>');
-        var scroll = new Lampa.Scroll({ mask: true, over: true });
-        scroll.minus();
-
-        items.forEach(function (item) {
-            var row = $('<div class="lm-ep-row selector"></div>');
-
-            if (item.image) {
-                var thumb = $('<div class="lm-ep-row__thumb"></div>');
-                thumb.css('background-image', 'url(' + item.image + ')');
-                var epNum = $('<div class="lm-ep-row__num"></div>');
-                epNum.text(item.episode_number);
-                thumb.append(epNum);
-                row.append(thumb);
-            } else {
-                var numOnly = $('<div class="lm-ep-row__num-only"></div>');
-                numOnly.text(item.episode_number);
-                row.append(numOnly);
-            }
-
-            var info = $('<div class="lm-ep-row__info"></div>');
-            var epTitle = $('<div class="lm-ep-row__title"></div>');
-            epTitle.text(item.title);
-            var epSub = $('<div class="lm-ep-row__sub"></div>');
-            epSub.text(item.subtitle);
-            info.append(epTitle);
-            info.append(epSub);
-
-            if (item.progress >= 0) {
-                var progressBar = $('<div class="lm-ep-row__progress"></div>');
-                var progressFill = $('<div class="lm-ep-row__progress-fill"></div>');
-                progressFill.css('width', Math.max(item.progress, 3) + '%');
-                if (item.progress >= 90) progressFill.addClass('lm-ep-row__progress-fill--done');
-                progressBar.append(progressFill);
-                info.append(progressBar);
-            }
-
-            row.append(info);
-
-            row.on('hover:enter', function () {
-                markStarted(item.id);
-                Lampa.Storage.set('lm_now_playing', item.id);
-                closeOverlay();
-                playExternalWithPlaylist(
-                    playlist[item.idx].url,
-                    playlist[item.idx].title,
-                    playlist
-                );
-            });
-
-            row.on('hover:focus', function () {
-                scroll.update(row);
-            });
-
-            scroll.append(row);
-        });
-
-        panel.append(scroll.render(true));
-        overlay.append(panel);
-        $('body').append(overlay);
-
-        setTimeout(function () {
-            try { Lampa.Layer.update(); } catch (e) {}
-            overlay.addClass('lm-episodes-overlay--visible');
-        }, 50);
-
-        Lampa.Controller.add('lm_episodes', {
-            toggle: function () {
-                Lampa.Controller.collectionSet(scroll.render());
-                Lampa.Controller.collectionFocus(false, scroll.render());
-            },
-            up: function () {
-                if (Navigator.canmove('up')) Navigator.move('up');
-            },
-            down: function () {
-                if (Navigator.canmove('down')) Navigator.move('down');
-            },
-            right: function () {},
-            left: function () {},
-            back: function () {
-                closeOverlay();
-                if (show.seasons && show.seasons.length > 1) {
-                    showSeasonPicker(show);
-                } else {
-                    Lampa.Controller.toggle('content');
-                }
-            }
-        });
-        Lampa.Controller.toggle('lm_episodes');
-
-        function closeOverlay() {
-            overlay.remove();
-            scroll.destroy();
-            Lampa.Controller.toggle('content');
-        }
-    }
-
-    function formatDate(dateStr) {
-        if (!dateStr) return '';
-        var parts = dateStr.split('-');
-        if (parts.length < 3) return dateStr;
-        var months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня',
-            'Июля', 'Августа', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
-        var day = parseInt(parts[2]);
-        var month = parseInt(parts[1]) - 1;
-        return day + ' ' + (months[month] || parts[1]);
     }
 
     function findLocalItem(lib, tmdbId, mediaType) {
@@ -1262,7 +976,6 @@
             Lampa.Component.add(PLUGIN_COMPONENT_UNMATCHED, UnmatchedComponent);
 
             registerPlayButton();
-            initPlayerTracking();
 
             function onReady() {
                 registerSettings();

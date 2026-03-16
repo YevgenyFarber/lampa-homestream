@@ -8,7 +8,6 @@ import { MainComponent } from './component';
 import { EpisodeComponent } from './episode-component';
 import { UnmatchedComponent } from './unmatched-component';
 import { registerPlayButton } from './play-button';
-import { initPlayerTracking } from './watch-progress';
 
 (function () {
     'use strict';
@@ -37,7 +36,6 @@ import { initPlayerTracking } from './watch-progress';
         Lampa.Component.add(PLUGIN_COMPONENT_UNMATCHED, UnmatchedComponent);
 
         registerPlayButton();
-        initPlayerTracking();
 
         function onReady() {
             registerSettings();

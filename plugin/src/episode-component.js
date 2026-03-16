@@ -1,26 +1,31 @@
-import { PLUGIN_COMPONENT, PLUGIN_COMPONENT_EPISODES } from './constants';
+import { PLUGIN_COMPONENT_EPISODES } from './constants';
 import { getEpisodes, streamUrl } from './api-client';
-import { formatFileSize, playExternalWithPlaylist } from './utils';
+import { formatFileSize } from './utils';
 
 export function EpisodeComponent(object) {
     var html = $('<div></div>');
     var scroll;
     var show;
+    var season;
 
     this.create = function () {
         var self = this;
         this.activity.loader(true);
 
-        show = this.activity.params && this.activity.params.local_media_show;
+        show = object.local_media_show;
+        season = object.local_media_season || (show.seasons && show.seasons[0]) || 1;
+
         if (!show) {
             this.activity.loader(false);
             return;
         }
 
-        loadSeasons(self, 1);
+        loadEpisodes(self, season);
     };
 
-    function loadSeasons(self, season) {
+    function loadEpisodes(self, s) {
+        season = s;
+
         getEpisodes(show.tmdb_id || show.id, season)
             .then(function (data) {
                 self.activity.loader(false);
@@ -28,35 +33,21 @@ export function EpisodeComponent(object) {
             })
             .catch(function (err) {
                 self.activity.loader(false);
-                var errEl = Lampa.Template.js(PLUGIN_COMPONENT + '_error');
-                errEl.find('.lm-error__text').text(err.message);
-                errEl.find('.lm-error__retry').text(Lampa.Lang.translate('local_media_retry'));
-                errEl.find('.lm-error__retry').on('hover:enter', function () {
-                    html.empty();
-                    scroll = null;
-                    self.activity.loader(true);
-                    loadSeasons(self, season);
-                });
-                html.append(errEl);
+                Lampa.Noty.show(err.message);
             });
     }
 
     function renderEpisodes(data, self) {
         html.empty();
-        scroll = null;
-
         scroll = new Lampa.Scroll({ mask: true, over: true });
         scroll.minus();
         html.append(scroll.render(true));
 
-        setTimeout(function () {
-            try { Lampa.Layer.update(); } catch(e) {}
-        }, 100);
-
-        if (show.season_count && show.season_count > 1) {
-            for (var s = 1; s <= show.season_count; s++) {
+        var seasons = show.seasons || [];
+        if (seasons.length > 1) {
+            for (var i = 0; i < seasons.length; i++) {
                 (function (sn) {
-                    var active = sn === (data.season || 1);
+                    var active = sn === season;
                     var bg = active ? 'background:#fff;color:#000;' : 'background:#404040;color:#fff;';
                     var btn = $('<div class="selector" style="padding:0.6em 1.2em;margin:0.3em;border-radius:0.4em;font-size:1.1em;display:inline-block;' + bg + '"></div>');
                     btn.text(Lampa.Lang.translate('local_media_season') + ' ' + sn);
@@ -64,13 +55,13 @@ export function EpisodeComponent(object) {
                         html.empty();
                         scroll = null;
                         self.activity.loader(true);
-                        loadSeasons(self, sn);
+                        loadEpisodes(self, sn);
                     });
                     btn.on('hover:focus', function () {
                         scroll.update(btn);
                     });
                     scroll.append(btn);
-                })(s);
+                })(seasons[i]);
             }
         }
 
@@ -78,30 +69,51 @@ export function EpisodeComponent(object) {
         var playlist = [];
 
         episodes.forEach(function (ep) {
+            var epLabel = 'S' + String(season).padStart(2, '0') + 'E' +
+                String(ep.episode_number).padStart(2, '0');
             playlist.push({
-                title: (show.title || '') + ' S' +
-                    String(data.season || 1).padStart(2, '0') + 'E' +
-                    String(ep.episode_number).padStart(2, '0') +
-                    (ep.title ? ' - ' + ep.title : ''),
+                title: (show.title || '') + ' ' + epLabel + (ep.title ? ' — ' + ep.title : ''),
                 url: streamUrl(ep.id)
             });
         });
 
         episodes.forEach(function (ep, idx) {
-            var item = Lampa.Template.js(PLUGIN_COMPONENT + '_episode_item');
+            var epLabel = 'S' + String(season).padStart(2, '0') + 'E' +
+                String(ep.episode_number).padStart(2, '0');
+            var sizeStr = ep.file_size ? formatFileSize(ep.file_size) : '';
 
-            item.find('.lm-episode__num').text(
-                'E' + String(ep.episode_number).padStart(2, '0')
+            var element = {
+                title: epLabel + (ep.title ? ' — ' + ep.title : ''),
+                quality: sizeStr,
+                info: ep.air_date ? ' • ' + ep.air_date : ''
+            };
+
+            var item = Lampa.Template.get('online', element);
+            item.addClass('video--stream selector');
+
+            var hash = Lampa.Utils.hash(
+                show.tmdb_id + '_s' + season + '_e' + ep.episode_number
             );
-            item.find('.lm-episode__title').text(ep.title || 'Episode ' + ep.episode_number);
-
-            var info = '';
-            if (ep.air_date) info += ep.air_date;
-            if (ep.file_size) info += (info ? ' • ' : '') + formatFileSize(ep.file_size);
-            item.find('.lm-episode__info').text(info);
+            var view = Lampa.Timeline.view(hash);
+            item.append(Lampa.Timeline.render(view));
 
             item.on('hover:enter', function () {
-                playExternalWithPlaylist(playlist[idx].url, playlist[idx].title, playlist);
+                Lampa.Player.play({
+                    url: playlist[idx].url,
+                    title: playlist[idx].title,
+                    timeline: view
+                });
+
+                Lampa.Player.playlist(playlist.map(function (p, pi) {
+                    var epHash = Lampa.Utils.hash(
+                        show.tmdb_id + '_s' + season + '_e' + episodes[pi].episode_number
+                    );
+                    return {
+                        url: p.url,
+                        title: p.title,
+                        timeline: Lampa.Timeline.view(epHash)
+                    };
+                }));
             });
 
             item.on('hover:focus', function () {
@@ -130,7 +142,6 @@ export function EpisodeComponent(object) {
         this.background();
 
         Lampa.Controller.add('content', {
-            invisible: true,
             toggle: function () {
                 Lampa.Controller.collectionSet(html);
                 Lampa.Controller.collectionFocus(false, html);
