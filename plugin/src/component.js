@@ -61,7 +61,7 @@ export function MainComponent(object) {
             hasContent = true;
             addSectionTitle(Lampa.Lang.translate('local_media_unmatched') + ' (' + lib.unmatched.length + ')');
 
-            var unmatchedBtn = $('<div class="selector" style="background:#404040;padding:1.5em;border-radius:0.6em;display:inline-block;margin:0.5em;"></div>');
+            var unmatchedBtn = $('<div class="lm-btn selector" style="background:#404040;padding:1.5em;border-radius:0.6em;display:inline-block;margin:0.5em;"></div>');
             unmatchedBtn.text(Lampa.Lang.translate('local_media_unmatched') + ' →');
             unmatchedBtn.on('hover:enter', function () {
                 Lampa.Activity.push({
