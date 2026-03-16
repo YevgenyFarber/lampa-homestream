@@ -32,10 +32,12 @@ export function MainComponent(object) {
 
     function renderLibrary(lib, self) {
         scroll = new Lampa.Scroll({ mask: true, over: true });
-        scroll.minus();
         html.append(scroll.render(true));
 
-        if (Lampa.Layer && Lampa.Layer.update) Lampa.Layer.update();
+        var headEl = document.querySelector('.head');
+        var headH = headEl ? headEl.getBoundingClientRect().height : 0;
+        scroll.render(true).style.height = (window.innerHeight - headH) + 'px';
+        scroll.render(true).style.overflow = 'hidden';
 
         var hasContent = false;
 
