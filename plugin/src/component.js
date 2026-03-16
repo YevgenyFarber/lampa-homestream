@@ -109,15 +109,7 @@ export function MainComponent(object) {
         card.find('.lm-card__info').text(info);
 
         card.on('hover:enter', function () {
-            if (mediaType === 'tv' && item.tmdb_id) {
-                Lampa.Activity.push({
-                    url: '',
-                    title: item.title,
-                    component: PLUGIN_COMPONENT_EPISODES,
-                    page: 1,
-                    local_media_show: item
-                });
-            } else if (item.tmdb_id) {
+            if (item.tmdb_id) {
                 Lampa.Activity.push({
                     url: '',
                     component: 'full',
