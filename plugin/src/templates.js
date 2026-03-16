@@ -48,4 +48,18 @@ export function registerTemplates() {
         '<div class="lm-error__text"></div>' +
         '<div class="lm-error__retry selector"></div>' +
     '</div>');
+
+    // Register online template if not already present (online plugin may not be installed)
+    if (!Lampa.Template.get('online', {}, true)) {
+        Lampa.Template.add('online',
+            '<div class="online-prestige selector" data-json="">' +
+                '<div class="online-prestige__body">' +
+                    '<div class="online-prestige__head">' +
+                        '<div class="online-prestige__title">{title}</div>' +
+                        '<div class="online-prestige__time">{quality}{info}</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>'
+        );
+    }
 }

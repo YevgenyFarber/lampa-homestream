@@ -89,30 +89,41 @@ export function EpisodeComponent(object) {
             };
 
             var item = Lampa.Template.get('online', element);
+            if (!item || (item.length !== undefined && item.length === 0)) {
+                item = $('<div class="selector" style="padding:1em;margin:0.3em 0;background:#2a2a2a;border-radius:0.5em;"></div>');
+                item.text(element.title + ' ' + element.quality + element.info);
+            }
             item.addClass('video--stream selector');
 
-            var hash = Lampa.Utils.hash(
-                show.tmdb_id + '_s' + season + '_e' + ep.episode_number
-            );
-            var view = Lampa.Timeline.view(hash);
-            item.append(Lampa.Timeline.render(view));
+            var view = null;
+            var hash = null;
+            if (Lampa.Timeline && Lampa.Timeline.view) {
+                hash = Lampa.Utils.hash(
+                    show.tmdb_id + '_s' + season + '_e' + ep.episode_number
+                );
+                view = Lampa.Timeline.view(hash);
+                if (Lampa.Timeline.render) {
+                    item.append(Lampa.Timeline.render(view));
+                }
+            }
 
             item.on('hover:enter', function () {
-                Lampa.Player.play({
+                var playData = {
                     url: playlist[idx].url,
-                    title: playlist[idx].title,
-                    timeline: view
-                });
+                    title: playlist[idx].title
+                };
+                if (view) playData.timeline = view;
+                Lampa.Player.play(playData);
 
                 Lampa.Player.playlist(playlist.map(function (p, pi) {
-                    var epHash = Lampa.Utils.hash(
-                        show.tmdb_id + '_s' + season + '_e' + episodes[pi].episode_number
-                    );
-                    return {
-                        url: p.url,
-                        title: p.title,
-                        timeline: Lampa.Timeline.view(epHash)
-                    };
+                    var result = { url: p.url, title: p.title };
+                    if (Lampa.Timeline && Lampa.Timeline.view) {
+                        var epHash = Lampa.Utils.hash(
+                            show.tmdb_id + '_s' + season + '_e' + episodes[pi].episode_number
+                        );
+                        result.timeline = Lampa.Timeline.view(epHash);
+                    }
+                    return result;
                 }));
             });
 
