@@ -420,22 +420,25 @@
 
             if (lib.movies && lib.movies.length) {
                 hasContent = true;
-                renderSection(Lampa.Lang.translate('local_media_movies'), lib.movies, 'movie', scroll);
+                addSectionTitle(Lampa.Lang.translate('local_media_movies') + ' (' + lib.movies.length + ')');
+                lib.movies.forEach(function (item) {
+                    addCard(item, 'movie');
+                });
             }
 
             if (lib.shows && lib.shows.length) {
                 hasContent = true;
-                renderSection(Lampa.Lang.translate('local_media_shows'), lib.shows, 'tv', scroll);
+                addSectionTitle(Lampa.Lang.translate('local_media_shows') + ' (' + lib.shows.length + ')');
+                lib.shows.forEach(function (item) {
+                    addCard(item, 'tv');
+                });
             }
 
             if (lib.unmatched && lib.unmatched.length) {
                 hasContent = true;
-                var unmatchedSection = Lampa.Template.js(PLUGIN_COMPONENT + '_section');
-                unmatchedSection.find('.lm-section__title').text(
-                    Lampa.Lang.translate('local_media_unmatched') + ' (' + lib.unmatched.length + ')'
-                );
+                addSectionTitle(Lampa.Lang.translate('local_media_unmatched') + ' (' + lib.unmatched.length + ')');
 
-                var unmatchedBtn = $('<div class="lm-card selector" style="background:#404040;padding:1.5em;border-radius:0.6em;width:auto;float:none;display:inline-block;"></div>');
+                var unmatchedBtn = $('<div class="selector" style="background:#404040;padding:1.5em;border-radius:0.6em;display:inline-block;margin:0.5em;"></div>');
                 unmatchedBtn.text(Lampa.Lang.translate('local_media_unmatched') + ' →');
                 unmatchedBtn.on('hover:enter', function () {
                     Lampa.Activity.push({
@@ -445,8 +448,10 @@
                         page: 1
                     });
                 });
-                unmatchedSection.find('.lm-section__body').append(unmatchedBtn);
-                scroll.append(unmatchedSection);
+                unmatchedBtn.on('hover:focus', function () {
+                    scroll.update(unmatchedBtn);
+                });
+                scroll.append(unmatchedBtn);
             }
 
             if (!hasContent) {
@@ -456,71 +461,68 @@
             self.activity.toggle();
         }
 
-        function renderSection(title, items, mediaType, scroll) {
-            var section = Lampa.Template.js(PLUGIN_COMPONENT + '_section');
-            section.find('.lm-section__title').text(title + ' (' + items.length + ')');
+        function addSectionTitle(text) {
+            var title = $('<div class="lm-section__title" style="clear:both;padding:1.2em;font-size:1.4em;font-weight:600;"></div>');
+            title.text(text);
+            scroll.append(title);
+        }
 
-            var sectionBody = section.find('.lm-section__body');
+        function addCard(item, mediaType) {
+            var card = Lampa.Template.js(PLUGIN_COMPONENT + '_card');
 
-            items.forEach(function (item) {
-                var card = Lampa.Template.js(PLUGIN_COMPONENT + '_card');
+            if (item.poster_url) {
+                var el = card.find('.lm-card__img');
+                if (el && el.length) el[0].style.backgroundImage = 'url(' + item.poster_url + ')';
+                else if (el && el.style) el.style.backgroundImage = 'url(' + item.poster_url + ')';
+            }
 
-                if (item.poster_url) {
-                    var imgEl = card.find('.lm-card__img');
-                    var el = imgEl[0] || imgEl;
-                    if (el && el.style) el.style.backgroundImage = 'url(' + item.poster_url + ')';
-                }
+            card.find('.lm-card__title').text(item.title || item.file_name || 'Unknown');
 
-                card.find('.lm-card__title').text(item.title || item.file_name || 'Unknown');
+            var info = '';
+            if (item.year) info += item.year;
+            if (item.vote_average) info += (info ? ' • ' : '') + '★ ' + item.vote_average.toFixed(1);
+            if (item.season_count) info += (info ? ' • ' : '') + item.season_count + ' seasons';
+            card.find('.lm-card__info').text(info);
 
-                var info = '';
-                if (item.year) info += item.year;
-                if (item.vote_average) info += (info ? ' • ' : '') + '★ ' + item.vote_average.toFixed(1);
-                if (item.season_count) info += (info ? ' • ' : '') + item.season_count + ' seasons';
-                card.find('.lm-card__info').text(info);
-
-                card.on('hover:enter', function () {
-                    if (mediaType === 'tv' && item.tmdb_id) {
-                        Lampa.Activity.push({
-                            url: '',
-                            title: item.title,
-                            component: PLUGIN_COMPONENT_EPISODES,
-                            page: 1,
-                            local_media_show: item
-                        });
-                    } else if (item.tmdb_id) {
-                        Lampa.Activity.push({
-                            url: '',
-                            component: 'full',
+            card.on('hover:enter', function () {
+                if (mediaType === 'tv' && item.tmdb_id) {
+                    Lampa.Activity.push({
+                        url: '',
+                        title: item.title,
+                        component: PLUGIN_COMPONENT_EPISODES,
+                        page: 1,
+                        local_media_show: item
+                    });
+                } else if (item.tmdb_id) {
+                    Lampa.Activity.push({
+                        url: '',
+                        component: 'full',
+                        id: item.tmdb_id,
+                        method: mediaType === 'tv' ? 'tv' : 'movie',
+                        card: {
                             id: item.tmdb_id,
-                            method: mediaType === 'tv' ? 'tv' : 'movie',
-                            card: {
-                                id: item.tmdb_id,
-                                source: 'tmdb',
-                                type: mediaType,
-                                title: item.title,
-                                original_title: item.original_title
-                            }
-                        });
-                    } else {
-                        Lampa.Player.play({
-                            title: item.title || item.file_name,
-                            url: streamUrl(item.id)
-                        });
-                    }
-                });
-
-                card.on('hover:focus', function () {
-                    if (scroll) scroll.update(card);
-                    if (item.backdrop_url) {
-                        Lampa.Background.immediately(item.backdrop_url);
-                    }
-                });
-
-                sectionBody.append(card);
+                            source: 'tmdb',
+                            type: mediaType,
+                            title: item.title,
+                            original_title: item.original_title
+                        }
+                    });
+                } else {
+                    Lampa.Player.play({
+                        title: item.title || item.file_name,
+                        url: streamUrl(item.id)
+                    });
+                }
             });
 
-            scroll.append(section);
+            card.on('hover:focus', function () {
+                scroll.update(card);
+                if (item.backdrop_url) {
+                    Lampa.Background.immediately(item.backdrop_url);
+                }
+            });
+
+            scroll.append(card);
         }
 
         function showEmpty(text) {
@@ -549,31 +551,22 @@
             if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
             this.background();
 
-            var target = scroll ? scroll.render() : html;
-
             Lampa.Controller.add('content', {
+                invisible: true,
                 toggle: function () {
-                    Lampa.Controller.collectionSet(target);
-                    Lampa.Controller.collectionFocus(false, target);
+                    Lampa.Controller.collectionSet(html);
+                    Lampa.Controller.collectionFocus(false, html);
                 },
                 left: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('left'))
-                        Lampa.Controller.enabled().move('left');
+                    if (Navigator.canmove('left')) Navigator.move('left');
                     else Lampa.Controller.toggle('menu');
                 },
                 up: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('up'))
-                        Lampa.Controller.enabled().move('up');
+                    if (Navigator.canmove('up')) Navigator.move('up');
                     else Lampa.Controller.toggle('head');
                 },
-                right: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('right'))
-                        Lampa.Controller.enabled().move('right');
-                },
-                down: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('down'))
-                        Lampa.Controller.enabled().move('down');
-                },
+                right: function () { Navigator.move('right'); },
+                down: function () { Navigator.move('down'); },
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
@@ -632,13 +625,11 @@
             body.append(scroll.render(true));
 
             if (show.season_count && show.season_count > 1) {
-                var seasonNav = $('<div style="display:flex;flex-wrap:wrap;padding:0.5em 0;margin-bottom:1em;"></div>');
-
                 for (var s = 1; s <= show.season_count; s++) {
                     (function (sn) {
                         var active = sn === (data.season || 1);
                         var bg = active ? 'background:#fff;color:#000;' : 'background:#404040;color:#fff;';
-                        var btn = $('<div class="selector" style="padding:0.6em 1.2em;margin:0.3em;border-radius:0.4em;font-size:1.1em;' + bg + '"></div>');
+                        var btn = $('<div class="selector" style="padding:0.6em 1.2em;margin:0.3em;border-radius:0.4em;font-size:1.1em;display:inline-block;' + bg + '"></div>');
                         btn.text(Lampa.Lang.translate('local_media_season') + ' ' + sn);
                         btn.on('hover:enter', function () {
                             body.empty();
@@ -646,10 +637,12 @@
                             self.activity.loader(true);
                             loadSeasons(self, sn);
                         });
-                        seasonNav.append(btn);
+                        btn.on('hover:focus', function () {
+                            scroll.update(btn);
+                        });
+                        scroll.append(btn);
                     })(s);
                 }
-                scroll.append(seasonNav);
             }
 
             var episodes = data.episodes || [];
@@ -684,7 +677,7 @@
                 });
 
                 item.on('hover:focus', function () {
-                    if (scroll) scroll.update(item);
+                    scroll.update(item);
                     if (ep.still_url) {
                         Lampa.Background.immediately(ep.still_url);
                     } else if (show.backdrop_url) {
@@ -708,31 +701,22 @@
             if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
             this.background();
 
-            var target = scroll ? scroll.render() : html;
-
             Lampa.Controller.add('content', {
+                invisible: true,
                 toggle: function () {
-                    Lampa.Controller.collectionSet(target);
-                    Lampa.Controller.collectionFocus(false, target);
+                    Lampa.Controller.collectionSet(html);
+                    Lampa.Controller.collectionFocus(false, html);
                 },
                 left: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('left'))
-                        Lampa.Controller.enabled().move('left');
+                    if (Navigator.canmove('left')) Navigator.move('left');
                     else Lampa.Controller.toggle('menu');
                 },
                 up: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('up'))
-                        Lampa.Controller.enabled().move('up');
+                    if (Navigator.canmove('up')) Navigator.move('up');
                     else Lampa.Controller.toggle('head');
                 },
-                right: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('right'))
-                        Lampa.Controller.enabled().move('right');
-                },
-                down: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('down'))
-                        Lampa.Controller.enabled().move('down');
-                },
+                right: function () { Navigator.move('right'); },
+                down: function () { Navigator.move('down'); },
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
@@ -798,7 +782,7 @@
                 });
 
                 item.on('hover:focus', function () {
-                    if (scroll) scroll.update(item);
+                    scroll.update(item);
                 });
 
                 scroll.append(item);
@@ -810,31 +794,22 @@
         this.start = function () {
             if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
 
-            var target = scroll ? scroll.render() : html;
-
             Lampa.Controller.add('content', {
+                invisible: true,
                 toggle: function () {
-                    Lampa.Controller.collectionSet(target);
-                    Lampa.Controller.collectionFocus(false, target);
+                    Lampa.Controller.collectionSet(html);
+                    Lampa.Controller.collectionFocus(false, html);
                 },
                 left: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('left'))
-                        Lampa.Controller.enabled().move('left');
+                    if (Navigator.canmove('left')) Navigator.move('left');
                     else Lampa.Controller.toggle('menu');
                 },
                 up: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('up'))
-                        Lampa.Controller.enabled().move('up');
+                    if (Navigator.canmove('up')) Navigator.move('up');
                     else Lampa.Controller.toggle('head');
                 },
-                right: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('right'))
-                        Lampa.Controller.enabled().move('right');
-                },
-                down: function () {
-                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('down'))
-                        Lampa.Controller.enabled().move('down');
-                },
+                right: function () { Navigator.move('right'); },
+                down: function () { Navigator.move('down'); },
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
