@@ -53,7 +53,7 @@ export function UnmatchedComponent(object) {
             });
 
             item.on('hover:focus', function () {
-                if (scroll) scroll.update(item);
+                scroll.update(item);
             });
 
             scroll.append(item);
@@ -65,31 +65,22 @@ export function UnmatchedComponent(object) {
     this.start = function () {
         if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
 
-        var target = scroll ? scroll.render() : html;
-
         Lampa.Controller.add('content', {
+            invisible: true,
             toggle: function () {
-                Lampa.Controller.collectionSet(target);
-                Lampa.Controller.collectionFocus(false, target);
+                Lampa.Controller.collectionSet(html);
+                Lampa.Controller.collectionFocus(false, html);
             },
             left: function () {
-                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('left'))
-                    Lampa.Controller.enabled().move('left');
+                if (Navigator.canmove('left')) Navigator.move('left');
                 else Lampa.Controller.toggle('menu');
             },
             up: function () {
-                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('up'))
-                    Lampa.Controller.enabled().move('up');
+                if (Navigator.canmove('up')) Navigator.move('up');
                 else Lampa.Controller.toggle('head');
             },
-            right: function () {
-                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('right'))
-                    Lampa.Controller.enabled().move('right');
-            },
-            down: function () {
-                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('down'))
-                    Lampa.Controller.enabled().move('down');
-            },
+            right: function () { Navigator.move('right'); },
+            down: function () { Navigator.move('down'); },
             back: function () { Lampa.Activity.backward(); }
         });
         Lampa.Controller.toggle('content');
