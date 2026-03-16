@@ -12,7 +12,7 @@ export function EpisodeComponent(object) {
         var self = this;
         this.activity.loader(true);
 
-        show = Lampa.Storage.get('lm_current_show', null) || object.local_media_show || null;
+        show = window.lm_current_show || null;
 
         if (!show) {
             this.activity.loader(false);
