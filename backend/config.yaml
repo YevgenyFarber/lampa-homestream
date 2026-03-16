@@ -1,0 +1,48 @@
+server:
+  host: "0.0.0.0"
+  port: 9090
+
+shares:
+  - name: "Movies"
+    type: "movies"
+    smb_url: "smb://192.168.1.2/F/Фильмы"
+    username: "Jenya"
+    password: "RonNoy1!2@"
+
+  - name: "TV Shows"
+    type: "tv"
+    smb_url: "smb://192.168.1.2/E/Сериалы"
+    username: "Jenya"
+    password: "RonNoy1!2@"
+
+  - name: "Concerts"
+    type: "movies"
+    smb_url: "smb://192.168.1.2/F/Concerts"
+    username: "Jenya"
+    password: "RonNoy1!2@"
+
+tmdb:
+  api_key: "17ce18e23d536d4d9a12df8a68a90a69"
+  language: "en"
+
+scanner:
+  extensions:
+    - ".mkv"
+    - ".mp4"
+    - ".avi"
+    - ".m4v"
+    - ".ts"
+    - ".m2ts"
+    - ".mov"
+    - ".wmv"
+    - ".flv"
+    - ".webm"
+  exclude_patterns:
+    - "**/sample/**"
+    - "**/extras/**"
+    - "**/.recycle/**"
+    - "**/Thumbs.db"
+    - "**/.DS_Store"
+  scan_interval_hours: 6
+
+data_dir: "./data"

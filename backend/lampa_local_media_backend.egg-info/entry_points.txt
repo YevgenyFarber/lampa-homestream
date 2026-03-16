@@ -1,0 +1,2 @@
+[console_scripts]
+lampa-local-media = app.main:cli
