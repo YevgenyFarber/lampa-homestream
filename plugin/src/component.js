@@ -1,4 +1,4 @@
-import { PLUGIN_COMPONENT, PLUGIN_COMPONENT_EPISODES, PLUGIN_COMPONENT_UNMATCHED } from './constants';
+import { PLUGIN_COMPONENT, PLUGIN_COMPONENT_UNMATCHED } from './constants';
 import { getLibrary, streamUrl } from './api-client';
 import { getBackendUrl, formatFileSize, playExternal } from './utils';
 

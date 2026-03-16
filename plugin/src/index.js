@@ -1,11 +1,10 @@
-import { PLUGIN_COMPONENT, PLUGIN_COMPONENT_EPISODES, PLUGIN_COMPONENT_UNMATCHED, PLUGIN_NAME, PLUGIN_VERSION } from './constants';
+import { PLUGIN_COMPONENT, PLUGIN_COMPONENT_UNMATCHED, PLUGIN_NAME, PLUGIN_VERSION } from './constants';
 import { registerLang } from './lang';
 import { registerTemplates } from './templates';
 import { registerStyles } from './styles';
 import { registerSettings } from './settings';
 import { addMenuItem } from './menu';
 import { MainComponent } from './component';
-import { EpisodeComponent } from './episode-component';
 import { UnmatchedComponent } from './unmatched-component';
 import { registerPlayButton } from './play-button';
 
@@ -32,7 +31,6 @@ import { registerPlayButton } from './play-button';
         registerStyles();
 
         Lampa.Component.add(PLUGIN_COMPONENT, MainComponent);
-        Lampa.Component.add(PLUGIN_COMPONENT_EPISODES, EpisodeComponent);
         Lampa.Component.add(PLUGIN_COMPONENT_UNMATCHED, UnmatchedComponent);
 
         registerPlayButton();

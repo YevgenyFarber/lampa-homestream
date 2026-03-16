@@ -49,14 +49,4 @@ export function registerTemplates() {
         '<div class="lm-error__retry selector"></div>' +
     '</div>');
 
-    Lampa.Template.add('lm_online_item',
-        '<div class="online-prestige selector" data-json="">' +
-            '<div class="online-prestige__body">' +
-                '<div class="online-prestige__head">' +
-                    '<div class="online-prestige__title">{title}</div>' +
-                    '<div class="online-prestige__time">{quality}{info}</div>' +
-                '</div>' +
-            '</div>' +
-        '</div>'
-    );
 }
