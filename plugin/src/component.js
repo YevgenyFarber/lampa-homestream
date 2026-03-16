@@ -36,8 +36,18 @@ export function MainComponent(object) {
         html.append(scroll.render(true));
 
         setTimeout(function () {
-            try { Lampa.Layer.update(); } catch(e) {}
-        }, 100);
+            var el = scroll.render(true);
+            console.log('LM scroll classes:', el.className);
+            console.log('LM scroll offsetHeight:', el.offsetHeight);
+            console.log('LM scroll.body scrollHeight:', el.querySelector('.scroll__body') ? el.querySelector('.scroll__body').scrollHeight : 'no body');
+            console.log('LM window.innerHeight:', window.innerHeight);
+            try {
+                Lampa.Layer.update();
+                console.log('LM Layer.update() called OK, new height:', el.offsetHeight);
+            } catch(e) {
+                console.log('LM Layer.update() error:', e.message);
+            }
+        }, 200);
 
         var hasContent = false;
 
