@@ -179,14 +179,24 @@ export function MainComponent(object) {
         if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
         this.background();
 
-        var need_restore = active_card_index >= 0 && active_card_index < cards_list.length;
-
         Lampa.Controller.add('content', {
             invisible: true,
             toggle: function () {
-                if (scroll) {
-                    Lampa.Controller.collectionSet(scroll.render());
-                    Lampa.Controller.collectionFocus(false, scroll.render());
+                if (!scroll) return;
+
+                scroll.restorePosition();
+
+                Lampa.Controller.collectionSet(scroll.render(true));
+
+                if (last_focused) {
+                    var el = last_focused instanceof $ ? last_focused[0] : last_focused;
+                    try { Navigator.focused(el); } catch (e) {}
+                }
+
+                var is_tv = false;
+                try { is_tv = Lampa.Platform.screen('tv'); } catch (e) {}
+                if (is_tv) {
+                    Lampa.Controller.collectionFocus(last_focused || false, scroll.render(true));
                 }
             },
             left: function () {
@@ -206,14 +216,6 @@ export function MainComponent(object) {
             back: function () { Lampa.Activity.backward(); }
         });
         Lampa.Controller.toggle('content');
-
-        if (need_restore && scroll) {
-            var target = cards_list[active_card_index];
-            setTimeout(function () {
-                scroll.immediate(target);
-                Lampa.Controller.collectionFocus(target, scroll.render());
-            }, 10);
-        }
     };
 
     this.pause = function () {};

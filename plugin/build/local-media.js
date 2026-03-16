@@ -404,8 +404,7 @@
     function MainComponent(object) {
         var html = $('<div></div>');
         var scroll;
-        var cards_list = [];
-        var active_card_index = -1;
+        var last_focused;
         var created = false;
 
         this.create = function () {
@@ -477,8 +476,7 @@
                     });
                 });
                 unmatchedBtn.on('hover:focus', function () {
-                    active_card_index = cards_list.length;
-                    cards_list.push(unmatchedBtn);
+                    last_focused = unmatchedBtn;
                     scroll.update(unmatchedBtn);
                 });
                 scroll.append(unmatchedBtn);
@@ -500,8 +498,6 @@
 
         function addCard(item, mediaType) {
             var card = Lampa.Template.js(PLUGIN_COMPONENT + '_card');
-            var cardIndex = cards_list.length;
-            cards_list.push(card);
 
             if (item.poster_url) {
                 var el = card.find('.lm-card__img');
@@ -538,7 +534,7 @@
             });
 
             card.on('hover:focus', function () {
-                active_card_index = cardIndex;
+                last_focused = card;
                 scroll.update(card);
                 if (item.backdrop_url) {
                     Lampa.Background.immediately(item.backdrop_url);
@@ -574,14 +570,24 @@
             if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
             this.background();
 
-            var need_restore = active_card_index >= 0 && active_card_index < cards_list.length;
-
             Lampa.Controller.add('content', {
                 invisible: true,
                 toggle: function () {
-                    if (scroll) {
-                        Lampa.Controller.collectionSet(scroll.render());
-                        Lampa.Controller.collectionFocus(false, scroll.render());
+                    if (!scroll) return;
+
+                    scroll.restorePosition();
+
+                    Lampa.Controller.collectionSet(scroll.render(true));
+
+                    if (last_focused) {
+                        var el = last_focused instanceof $ ? last_focused[0] : last_focused;
+                        try { Navigator.focused(el); } catch (e) {}
+                    }
+
+                    var is_tv = false;
+                    try { is_tv = Lampa.Platform.screen('tv'); } catch (e) {}
+                    if (is_tv) {
+                        Lampa.Controller.collectionFocus(last_focused || false, scroll.render(true));
                     }
                 },
                 left: function () {
@@ -601,14 +607,6 @@
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
-
-            if (need_restore && scroll) {
-                var target = cards_list[active_card_index];
-                setTimeout(function () {
-                    scroll.immediate(target);
-                    Lampa.Controller.collectionFocus(target, scroll.render());
-                }, 10);
-            }
         };
 
         this.pause = function () {};
