@@ -4,7 +4,12 @@ __pycache__/
 *$py.class
 *.egg-info/
 dist/
-build/
+# Python build artifacts
+*.egg-info/
+dist/
+
+# Plugin build output is deployed via GitHub Pages
+!plugin/build/
 *.egg
 .pytest_cache/
 
