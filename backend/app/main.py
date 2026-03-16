@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
                        {s.name: _scanner.get_source(s.name) for s in _config.shares
                         if _scanner.get_source(s.name)})
 
-    library = Library(_db)
+    library = Library(_db, _tmdb)
     init_routes(_db, _config, _scanner, _matcher, _tmdb, library)
 
     # Initial scan on startup

@@ -93,48 +93,137 @@ function loadAndShowEpisodes(show, season) {
         }
 
         var playlist = [];
-        var items = [];
-
         episodes.forEach(function (ep) {
-            var epTitle = 'S' + String(season).padStart(2, '0') + 'E' +
+            var epLabel = 'S' + String(season).padStart(2, '0') + 'E' +
                 String(ep.episode_number).padStart(2, '0');
-            if (ep.title) epTitle += ' — ' + ep.title;
-
-            var info = '';
-            if (ep.file_size) info = ' (' + formatFileSize(ep.file_size) + ')';
-
             playlist.push({
-                title: (show.title || '') + ' ' + epTitle,
+                title: (show.title || '') + ' ' + epLabel + (ep.title ? ' — ' + ep.title : ''),
                 url: streamUrl(ep.id)
             });
+        });
+
+        var items = [];
+        episodes.forEach(function (ep, idx) {
+            var epLabel = 'S' + String(season).padStart(2, '0') + 'E' +
+                String(ep.episode_number).padStart(2, '0');
+            var sizeStr = ep.file_size ? formatFileSize(ep.file_size) : '';
 
             items.push({
-                title: epTitle + info,
-                idx: items.length
+                title: ep.title || ('Episode ' + ep.episode_number),
+                subtitle: epLabel + (ep.air_date ? ' • ' + formatDate(ep.air_date) : '') + (sizeStr ? ' • ' + sizeStr : ''),
+                image: ep.still_url || '',
+                idx: idx,
+                episode_number: ep.episode_number
             });
         });
 
-        Lampa.Select.show({
-            title: show.title + ' — ' + Lampa.Lang.translate('local_media_season') + ' ' + season,
-            items: items,
-            onSelect: function (a) {
-                playExternalWithPlaylist(
-                    playlist[a.idx].url,
-                    playlist[a.idx].title,
-                    playlist
-                );
-            },
-            onBack: function () {
-                if (show.season_count > 1) {
-                    showSeasonPicker(show);
-                } else {
-                    Lampa.Controller.toggle('content');
-                }
-            }
-        });
+        showEpisodeOverlay(show, season, items, playlist);
     }).catch(function (err) {
         Lampa.Noty.show(Lampa.Lang.translate('local_media_error') + ': ' + err.message);
     });
+}
+
+function showEpisodeOverlay(show, season, items, playlist) {
+    var overlay = $('<div class="lm-episodes-overlay"></div>');
+    var panel = $('<div class="lm-episodes-panel"></div>');
+    var title = $('<div class="lm-episodes-panel__title"></div>');
+    title.text(show.title + ' — ' + Lampa.Lang.translate('local_media_season') + ' ' + season);
+    panel.append(title);
+
+    var list = $('<div class="lm-episodes-panel__list"></div>');
+    var scroll = new Lampa.Scroll({ mask: true, over: true });
+    scroll.minus();
+
+    items.forEach(function (item) {
+        var row = $('<div class="lm-ep-row selector"></div>');
+
+        if (item.image) {
+            var thumb = $('<div class="lm-ep-row__thumb"></div>');
+            thumb.css('background-image', 'url(' + item.image + ')');
+            var epNum = $('<div class="lm-ep-row__num"></div>');
+            epNum.text(item.episode_number);
+            thumb.append(epNum);
+            row.append(thumb);
+        } else {
+            var numOnly = $('<div class="lm-ep-row__num-only"></div>');
+            numOnly.text(item.episode_number);
+            row.append(numOnly);
+        }
+
+        var info = $('<div class="lm-ep-row__info"></div>');
+        var epTitle = $('<div class="lm-ep-row__title"></div>');
+        epTitle.text(item.title);
+        var epSub = $('<div class="lm-ep-row__sub"></div>');
+        epSub.text(item.subtitle);
+        info.append(epTitle);
+        info.append(epSub);
+        row.append(info);
+
+        row.on('hover:enter', function () {
+            closeOverlay();
+            playExternalWithPlaylist(
+                playlist[item.idx].url,
+                playlist[item.idx].title,
+                playlist
+            );
+        });
+
+        row.on('hover:focus', function () {
+            scroll.update(row);
+        });
+
+        scroll.append(row);
+    });
+
+    panel.append(scroll.render(true));
+    overlay.append(panel);
+    $('body').append(overlay);
+
+    setTimeout(function () {
+        try { Lampa.Layer.update(); } catch (e) {}
+        overlay.addClass('lm-episodes-overlay--visible');
+    }, 50);
+
+    Lampa.Controller.add('lm_episodes', {
+        toggle: function () {
+            Lampa.Controller.collectionSet(scroll.render());
+            Lampa.Controller.collectionFocus(false, scroll.render());
+        },
+        up: function () {
+            if (Navigator.canmove('up')) Navigator.move('up');
+        },
+        down: function () {
+            if (Navigator.canmove('down')) Navigator.move('down');
+        },
+        right: function () {},
+        left: function () {},
+        back: function () {
+            closeOverlay();
+            if (show.seasons && show.seasons.length > 1) {
+                showSeasonPicker(show);
+            } else {
+                Lampa.Controller.toggle('content');
+            }
+        }
+    });
+    Lampa.Controller.toggle('lm_episodes');
+
+    function closeOverlay() {
+        overlay.remove();
+        scroll.destroy();
+        Lampa.Controller.toggle('content');
+    }
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    var parts = dateStr.split('-');
+    if (parts.length < 3) return dateStr;
+    var months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня',
+        'Июля', 'Августа', 'Сентября', 'Октября', 'Ноября', 'Декабря'];
+    var day = parseInt(parts[2]);
+    var month = parseInt(parts[1]) - 1;
+    return day + ' ' + (months[month] || parts[1]);
 }
 
 function findLocalItem(lib, tmdbId, mediaType) {

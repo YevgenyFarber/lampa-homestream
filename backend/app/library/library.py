@@ -10,8 +10,9 @@ log = get_logger(__name__)
 
 
 class Library:
-    def __init__(self, db: Database):
+    def __init__(self, db: Database, tmdb_client=None):
         self._db = db
+        self._tmdb = tmdb_client
 
     async def get_movies(self) -> list[dict]:
         matched = await self._db.get_matched_files()
@@ -66,18 +67,29 @@ class Library:
             and m.get("parsed_season") == season
         ]
 
-        tmdb = await self._db.get_tmdb_cache(show_tmdb_id, "tv")
-        show_meta = tmdb["metadata"] if tmdb else {}
+        tmdb_episodes: dict[int, dict] = {}
+        if self._tmdb:
+            try:
+                season_data = await self._tmdb.get_tv_season(show_tmdb_id, season)
+                for te in season_data.get("episodes", []):
+                    tmdb_episodes[te["episode_number"]] = te
+            except Exception as exc:
+                log.warning("tmdb_season_fetch_failed", tmdb_id=show_tmdb_id, season=season, error=str(exc))
 
         result = []
         for ep in episodes:
+            ep_num = ep.get("parsed_episode", 0)
+            tmdb_ep = tmdb_episodes.get(ep_num, {})
+            still_path = tmdb_ep.get("still_path")
+            still_url = f"https://image.tmdb.org/t/p/w300{still_path}" if still_path else None
+
             result.append({
                 "id": ep["id"],
-                "episode_number": ep.get("parsed_episode", 0),
-                "title": ep.get("parsed_title", ep.get("file_name", "")),
-                "overview": "",
-                "still_url": None,
-                "air_date": None,
+                "episode_number": ep_num,
+                "title": tmdb_ep.get("name") or ep.get("parsed_title", ep.get("file_name", "")),
+                "overview": tmdb_ep.get("overview", ""),
+                "still_url": still_url,
+                "air_date": tmdb_ep.get("air_date"),
                 "file_path": ep["file_path"],
                 "file_size": ep["file_size"],
             })
