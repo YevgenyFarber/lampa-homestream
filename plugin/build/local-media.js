@@ -253,6 +253,9 @@
         '.lm-ep-row__info { flex: 1; margin-left: 1em; overflow: hidden; }' +
         '.lm-ep-row__title { font-size: 1.1em; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
         '.lm-ep-row__sub { font-size: 0.85em; color: rgba(255,255,255,0.5); margin-top: 0.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
+        '.lm-ep-row__progress { height: 0.2em; background: rgba(255,255,255,0.15); border-radius: 0.1em; margin-top: 0.4em; overflow: hidden; }' +
+        '.lm-ep-row__progress-fill { height: 100%; background: #3388ff; border-radius: 0.1em; transition: width 0.3s; }' +
+        '.lm-ep-row__progress-fill--done { background: #4caf50; }' +
 
         '</style>');
     }
@@ -893,6 +896,83 @@
         };
     }
 
+    var STORAGE_KEY = 'lm_watch_progress';
+
+    function _getAll() {
+        return Lampa.Storage.get(STORAGE_KEY, {});
+    }
+
+    function _saveAll(data) {
+        Lampa.Storage.set(STORAGE_KEY, data);
+    }
+
+    function getProgress(episodeId) {
+        var all = _getAll();
+        return all[episodeId] || null;
+    }
+
+    function setProgress(episodeId, time, duration) {
+        var all = _getAll();
+        var percent = duration > 0 ? Math.min((time / duration) * 100, 100) : 0;
+        all[episodeId] = {
+            time: Math.floor(time),
+            duration: Math.floor(duration),
+            percent: Math.round(percent),
+            timestamp: Date.now()
+        };
+        _saveAll(all);
+    }
+
+    function markStarted(episodeId) {
+        var all = _getAll();
+        if (!all[episodeId]) {
+            all[episodeId] = { time: 0, duration: 0, percent: 0, timestamp: Date.now() };
+            _saveAll(all);
+        }
+    }
+
+    function markWatched(episodeId) {
+        var all = _getAll();
+        all[episodeId] = { time: 0, duration: 0, percent: 100, timestamp: Date.now() };
+        _saveAll(all);
+    }
+
+    function initPlayerTracking() {
+        var currentEpisodeId = null;
+
+        Lampa.Storage.listener.follow('change', function (e) {
+            if (e.name === 'lm_now_playing') {
+                currentEpisodeId = e.value || null;
+            }
+        });
+
+        Lampa.Listener.follow('player', function (e) {
+            if (!currentEpisodeId) {
+                currentEpisodeId = Lampa.Storage.get('lm_now_playing', null);
+            }
+            if (!currentEpisodeId) return;
+
+            if (e.type === 'timeupdate') {
+                var time = e.current || 0;
+                var duration = e.duration || 0;
+                if (duration > 0 && time > 5) {
+                    setProgress(currentEpisodeId, time, duration);
+                }
+            }
+
+            if (e.type === 'ended') {
+                markWatched(currentEpisodeId);
+                Lampa.Storage.set('lm_now_playing', '');
+                currentEpisodeId = null;
+            }
+
+            if (e.type === 'destroy') {
+                Lampa.Storage.set('lm_now_playing', '');
+                currentEpisodeId = null;
+            }
+        });
+    }
+
     function registerPlayButton() {
         Lampa.Listener.follow('full', function (e) {
             if (e.type !== 'complite') return;
@@ -936,6 +1016,8 @@
                     if (mediaType === 'tv') {
                         showSeasonPicker(localItem);
                     } else {
+                        markStarted(localItem.id);
+                        Lampa.Storage.set('lm_now_playing', localItem.id);
                         playExternal(streamUrl(localItem.id), localItem.title || card.title);
                     }
                 });
@@ -999,13 +1081,16 @@
                 var epLabel = 'S' + String(season).padStart(2, '0') + 'E' +
                     String(ep.episode_number).padStart(2, '0');
                 var sizeStr = ep.file_size ? formatFileSize(ep.file_size) : '';
+                var progress = getProgress(ep.id);
 
                 items.push({
+                    id: ep.id,
                     title: ep.title || ('Episode ' + ep.episode_number),
                     subtitle: epLabel + (ep.air_date ? ' • ' + formatDate(ep.air_date) : '') + (sizeStr ? ' • ' + sizeStr : ''),
                     image: ep.still_url || '',
                     idx: idx,
-                    episode_number: ep.episode_number
+                    episode_number: ep.episode_number,
+                    progress: progress ? progress.percent : -1
                 });
             });
 
@@ -1049,9 +1134,21 @@
             epSub.text(item.subtitle);
             info.append(epTitle);
             info.append(epSub);
+
+            if (item.progress >= 0) {
+                var progressBar = $('<div class="lm-ep-row__progress"></div>');
+                var progressFill = $('<div class="lm-ep-row__progress-fill"></div>');
+                progressFill.css('width', Math.max(item.progress, 3) + '%');
+                if (item.progress >= 90) progressFill.addClass('lm-ep-row__progress-fill--done');
+                progressBar.append(progressFill);
+                info.append(progressBar);
+            }
+
             row.append(info);
 
             row.on('hover:enter', function () {
+                markStarted(item.id);
+                Lampa.Storage.set('lm_now_playing', item.id);
                 closeOverlay();
                 playExternalWithPlaylist(
                     playlist[item.idx].url,
@@ -1165,6 +1262,7 @@
             Lampa.Component.add(PLUGIN_COMPONENT_UNMATCHED, UnmatchedComponent);
 
             registerPlayButton();
+            initPlayerTracking();
 
             function onReady() {
                 registerSettings();

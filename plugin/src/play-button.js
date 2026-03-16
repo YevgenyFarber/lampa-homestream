@@ -1,5 +1,6 @@
 import { getLibrary, getEpisodes, streamUrl } from './api-client';
 import { getBackendUrl, playExternal, playExternalWithPlaylist, formatFileSize } from './utils';
+import { getProgress, markStarted } from './watch-progress';
 
 export function registerPlayButton() {
     Lampa.Listener.follow('full', function (e) {
@@ -44,6 +45,8 @@ export function registerPlayButton() {
                 if (mediaType === 'tv') {
                     showSeasonPicker(localItem);
                 } else {
+                    markStarted(localItem.id);
+                    Lampa.Storage.set('lm_now_playing', localItem.id);
                     playExternal(streamUrl(localItem.id), localItem.title || card.title);
                 }
             });
@@ -107,13 +110,16 @@ function loadAndShowEpisodes(show, season) {
             var epLabel = 'S' + String(season).padStart(2, '0') + 'E' +
                 String(ep.episode_number).padStart(2, '0');
             var sizeStr = ep.file_size ? formatFileSize(ep.file_size) : '';
+            var progress = getProgress(ep.id);
 
             items.push({
+                id: ep.id,
                 title: ep.title || ('Episode ' + ep.episode_number),
                 subtitle: epLabel + (ep.air_date ? ' • ' + formatDate(ep.air_date) : '') + (sizeStr ? ' • ' + sizeStr : ''),
                 image: ep.still_url || '',
                 idx: idx,
-                episode_number: ep.episode_number
+                episode_number: ep.episode_number,
+                progress: progress ? progress.percent : -1
             });
         });
 
@@ -157,9 +163,21 @@ function showEpisodeOverlay(show, season, items, playlist) {
         epSub.text(item.subtitle);
         info.append(epTitle);
         info.append(epSub);
+
+        if (item.progress >= 0) {
+            var progressBar = $('<div class="lm-ep-row__progress"></div>');
+            var progressFill = $('<div class="lm-ep-row__progress-fill"></div>');
+            progressFill.css('width', Math.max(item.progress, 3) + '%');
+            if (item.progress >= 90) progressFill.addClass('lm-ep-row__progress-fill--done');
+            progressBar.append(progressFill);
+            info.append(progressBar);
+        }
+
         row.append(info);
 
         row.on('hover:enter', function () {
+            markStarted(item.id);
+            Lampa.Storage.set('lm_now_playing', item.id);
             closeOverlay();
             playExternalWithPlaylist(
                 playlist[item.idx].url,

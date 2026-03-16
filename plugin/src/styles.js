@@ -77,6 +77,9 @@ export function registerStyles() {
     '.lm-ep-row__info { flex: 1; margin-left: 1em; overflow: hidden; }' +
     '.lm-ep-row__title { font-size: 1.1em; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
     '.lm-ep-row__sub { font-size: 0.85em; color: rgba(255,255,255,0.5); margin-top: 0.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
+    '.lm-ep-row__progress { height: 0.2em; background: rgba(255,255,255,0.15); border-radius: 0.1em; margin-top: 0.4em; overflow: hidden; }' +
+    '.lm-ep-row__progress-fill { height: 100%; background: #3388ff; border-radius: 0.1em; transition: width 0.3s; }' +
+    '.lm-ep-row__progress-fill--done { background: #4caf50; }' +
 
     '</style>');
 }
