@@ -15,10 +15,7 @@ import { registerPlayButton } from './play-button';
     if (window.plugin_local_media_loaded) return;
     window.plugin_local_media_loaded = true;
 
-    console.log('HomeStream', 'plugin file loaded');
-
     function startPlugin() {
-        console.log('HomeStream', 'startPlugin called');
         registerLang();
 
         var manifest = {

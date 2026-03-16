@@ -58,5 +58,8 @@ export function registerStyles() {
     // Force scroll container height within our plugin
     '.activity--active .scroll.layer--wheight { height: calc(100vh - 5em) !important; }' +
 
+    // Selector button focus
+    '.selector.focus, .selector.hover { background: #fff !important; color: #000 !important; }' +
+
     '</style>');
 }

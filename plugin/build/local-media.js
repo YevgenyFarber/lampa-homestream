@@ -234,6 +234,9 @@
         // Force scroll container height within our plugin
         '.activity--active .scroll.layer--wheight { height: calc(100vh - 5em) !important; }' +
 
+        // Selector button focus
+        '.selector.focus, .selector.hover { background: #fff !important; color: #000 !important; }' +
+
         '</style>');
     }
 
@@ -425,7 +428,6 @@
         var scroll;
 
         this.create = function () {
-            console.log('HomeStream', 'MainComponent.create called');
             var self = this;
             this.activity.loader(true);
 
@@ -449,24 +451,13 @@
         };
 
         function renderLibrary(lib, self) {
-            console.log('HomeStream', 'renderLibrary called, movies:', lib.movies ? lib.movies.length : 0);
             scroll = new Lampa.Scroll({ mask: true, over: true });
             scroll.minus();
             html.append(scroll.render(true));
 
             setTimeout(function () {
-                var el = scroll.render(true);
-                console.log('LM scroll classes:', el.className);
-                console.log('LM scroll offsetHeight:', el.offsetHeight);
-                console.log('LM scroll.body scrollHeight:', el.querySelector('.scroll__body') ? el.querySelector('.scroll__body').scrollHeight : 'no body');
-                console.log('LM window.innerHeight:', window.innerHeight);
-                try {
-                    Lampa.Layer.update();
-                    console.log('LM Layer.update() called OK, new height:', el.offsetHeight);
-                } catch(e) {
-                    console.log('LM Layer.update() error:', e.message);
-                }
-            }, 200);
+                try { Lampa.Layer.update(); } catch(e) {}
+            }, 100);
 
             var hasContent = false;
 
@@ -968,10 +959,7 @@
         if (window.plugin_local_media_loaded) return;
         window.plugin_local_media_loaded = true;
 
-        console.log('HomeStream', 'plugin file loaded');
-
         function startPlugin() {
-            console.log('HomeStream', 'startPlugin called');
             registerLang();
 
             var manifest = {
