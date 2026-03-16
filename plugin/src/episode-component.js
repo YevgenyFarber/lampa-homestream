@@ -99,8 +99,13 @@ export function EpisodeComponent(object) {
                 info: ep.air_date ? ' • ' + ep.air_date : ''
             };
 
-            var item = Lampa.Template.get('online', element);
-            if (!item || (item.length !== undefined && item.length === 0)) {
+            var item;
+            try {
+                item = Lampa.Template.get('lm_online_item', element);
+            } catch (e) {
+                item = null;
+            }
+            if (!item || !item.length) {
                 item = $('<div class="selector" style="padding:1em;margin:0.3em 0;background:#2a2a2a;border-radius:0.5em;"></div>');
                 item.text(element.title + ' ' + element.quality + element.info);
             }
