@@ -231,9 +231,6 @@
         '.lm-error__retry { display: inline-block; padding: 0.8em 2em; background: #404040; border-radius: 0.5em; color: #fff; font-size: 1.1em; }' +
         '.lm-error__retry.focus, .lm-error__retry.hover { background: #fff; color: #000; }' +
 
-        // Force scroll container height within our plugin
-        '.activity--active .scroll.layer--wheight { height: calc(100vh - 5em) !important; }' +
-
         // Button focus
         '.lm-btn.focus, .lm-btn.hover { background: #fff !important; color: #000 !important; }' +
 
