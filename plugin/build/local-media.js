@@ -565,12 +565,14 @@
             if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
             this.background();
 
+            var restore = last_focused;
+
             Lampa.Controller.add('content', {
                 invisible: true,
                 toggle: function () {
                     if (scroll) {
                         Lampa.Controller.collectionSet(scroll.render());
-                        Lampa.Controller.collectionFocus(last_focused || false, scroll.render());
+                        Lampa.Controller.collectionFocus(false, scroll.render());
                     }
                 },
                 left: function () {
@@ -591,10 +593,11 @@
             });
             Lampa.Controller.toggle('content');
 
-            if (last_focused && scroll) {
+            if (restore && scroll) {
                 setTimeout(function () {
-                    scroll.update(last_focused);
-                }, 10);
+                    Lampa.Controller.collectionFocus(restore, scroll.render());
+                    scroll.update(restore);
+                }, 120);
             }
         };
 
