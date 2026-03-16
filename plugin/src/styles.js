@@ -12,7 +12,7 @@ export function registerStyles() {
     '.lm-section__body { display: flex; flex-wrap: wrap; }' +
 
     // Card (poster style)
-    '.lm-card { float: left; width: 12em; padding: 0.5em; cursor: pointer; position: relative; }' +
+    '.lm-card { display: inline-block; vertical-align: top; width: 12em; padding: 0.5em; cursor: pointer; position: relative; }' +
     '.lm-card__img-box { position: relative; padding-top: 150%; border-radius: 0.5em; overflow: hidden; background: #2a2a2a; }' +
     '.lm-card__img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; background-repeat: no-repeat; }' +
     '.lm-card__title { font-size: 1.1em; font-weight: 500; margin-top: 0.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; }' +

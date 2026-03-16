@@ -81,7 +81,7 @@ export function MainComponent(object) {
     }
 
     function addSectionTitle(text) {
-        var title = $('<div class="lm-section__title" style="clear:both;padding:1.2em;font-size:1.4em;font-weight:600;"></div>');
+        var title = $('<div class="lm-section__title" style="padding:1.2em;font-size:1.4em;font-weight:600;display:block;width:100%;"></div>');
         title.text(text);
         scroll.append(title);
     }
