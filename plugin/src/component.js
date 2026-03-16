@@ -5,6 +5,7 @@ import { getBackendUrl, formatFileSize, playExternal } from './utils';
 export function MainComponent(object) {
     var html = $('<div></div>');
     var scroll, data;
+    var last_focused;
 
     this.create = function () {
         var self = this;
@@ -72,6 +73,7 @@ export function MainComponent(object) {
                 });
             });
             unmatchedBtn.on('hover:focus', function () {
+                last_focused = unmatchedBtn;
                 scroll.update(unmatchedBtn);
             });
             scroll.append(unmatchedBtn);
@@ -129,6 +131,7 @@ export function MainComponent(object) {
         });
 
         card.on('hover:focus', function () {
+            last_focused = card;
             scroll.update(card);
             if (item.backdrop_url) {
                 Lampa.Background.immediately(item.backdrop_url);
@@ -168,7 +171,7 @@ export function MainComponent(object) {
             invisible: true,
             toggle: function () {
                 Lampa.Controller.collectionSet(html);
-                Lampa.Controller.collectionFocus(false, html);
+                Lampa.Controller.collectionFocus(last_focused || false, html);
             },
             left: function () {
                 if (Navigator.canmove('left')) Navigator.move('left');
