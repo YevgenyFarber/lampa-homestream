@@ -475,8 +475,10 @@
                         page: 1
                     });
                 });
-                unmatchedBtn.on('hover:focus', function () {
+                unmatchedBtn.on('hover:touch hover:enter hover:focus', function () {
                     last_focused = unmatchedBtn;
+                });
+                unmatchedBtn.on('hover:focus', function () {
                     scroll.update(unmatchedBtn);
                 });
                 scroll.append(unmatchedBtn);
@@ -513,6 +515,10 @@
             if (item.season_count) info += (info ? ' • ' : '') + item.season_count + ' seasons';
             card.find('.lm-card__info').text(info);
 
+            card.on('hover:touch hover:enter hover:focus', function () {
+                last_focused = card;
+            });
+
             card.on('hover:enter', function () {
                 if (item.tmdb_id) {
                     Lampa.Activity.push({
@@ -534,7 +540,6 @@
             });
 
             card.on('hover:focus', function () {
-                last_focused = card;
                 scroll.update(card);
                 if (item.backdrop_url) {
                     Lampa.Background.immediately(item.backdrop_url);
@@ -607,6 +612,12 @@
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
+
+            if (last_focused && scroll) {
+                setTimeout(function () {
+                    scroll.update(last_focused);
+                }, 0);
+            }
         };
 
         this.pause = function () {};
