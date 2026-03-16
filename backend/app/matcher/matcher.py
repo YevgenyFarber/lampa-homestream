@@ -69,6 +69,20 @@ class Matcher:
                     matched_count += 1
                     continue
 
+                # Retry with cleaned-up title (common transliterations)
+                cleaned = _clean_title(parsed.title)
+                if cleaned != parsed.title:
+                    alt_parsed = ParsedMedia(
+                        title=cleaned, year=parsed.year,
+                        season=parsed.season, episode=parsed.episode,
+                        media_type=parsed.media_type,
+                        confidence_hint=parsed.confidence_hint,
+                    )
+                    tmdb_match = await self._try_tmdb_match(f["id"], alt_parsed)
+                    if tmdb_match:
+                        matched_count += 1
+                        continue
+
             unmatched_count += 1
             log.debug("unmatched_file", file=f["file_name"], parsed_title=parsed.title)
 
@@ -217,6 +231,24 @@ class Matcher:
         except Exception as e:
             log.debug("imdb_lookup_error", imdb_id=imdb_id, error=str(e))
         return None
+
+
+_TRANSLITERATION_FIXES = {
+    " OT ": " of the ",
+    " IZ ": " from ",
+    " I ": " and ",
+    " V ": " in ",
+    " NA ": " on ",
+}
+
+
+def _clean_title(title: str) -> str:
+    """Fix common transliteration artifacts in folder names."""
+    result = f" {title} "
+    for pattern, replacement in _TRANSLITERATION_FIXES.items():
+        result = result.replace(pattern, replacement)
+        result = result.replace(pattern.lower(), replacement)
+    return result.strip()
 
 
 def _score_results(results: list[dict], parsed: ParsedMedia, media_type: str) -> tuple[dict | None, float]:

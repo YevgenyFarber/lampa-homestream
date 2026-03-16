@@ -122,9 +122,10 @@ def load_config(config_path: str | Path = "/config/config.yaml") -> AppConfig:
     )
 
     scanner_data = raw.get("scanner", {})
+    _defaults = ScannerConfig()
     scanner = ScannerConfig(
-        extensions=scanner_data.get("extensions", ScannerConfig.extensions),
-        exclude_patterns=scanner_data.get("exclude_patterns", ScannerConfig.exclude_patterns),
+        extensions=scanner_data.get("extensions", _defaults.extensions),
+        exclude_patterns=scanner_data.get("exclude_patterns", _defaults.exclude_patterns),
         scan_interval_hours=int(scanner_data.get("scan_interval_hours", 6)),
     )
 

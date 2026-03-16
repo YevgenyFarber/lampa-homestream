@@ -27,7 +27,9 @@ class SmbSource:
         self._share = share
         self._parsed = urlparse(share.smb_url)
         self._host = self._parsed.hostname or ""
-        self._share_path = self._parsed.path.lstrip("/")
+        path_parts = self._parsed.path.strip("/").split("/", 1)
+        self._share_name = path_parts[0]
+        self._root_subdir = path_parts[1] if len(path_parts) > 1 else ""
         self._connected = False
 
     def connect(self) -> None:
@@ -38,7 +40,8 @@ class SmbSource:
                 password=self._share.password,
             )
             self._connected = True
-            log.info("smb_connected", host=self._host, share=self._share_path)
+            log.info("smb_connected", host=self._host, share=self._share_name,
+                     subdir=self._root_subdir or "/")
         except Exception as e:
             log.error("smb_connection_failed", host=self._host, error=str(e))
             raise
@@ -48,7 +51,9 @@ class SmbSource:
         return self._connected
 
     def _smb_path(self, relative: str = "") -> str:
-        base = rf"\\{self._host}\{self._share_path}"
+        base = rf"\\{self._host}\{self._share_name}"
+        if self._root_subdir:
+            base = rf"{base}\{self._root_subdir.replace('/', chr(92))}"
         if relative:
             base = rf"{base}\{relative.replace('/', chr(92))}"
         return base
@@ -71,13 +76,21 @@ class SmbSource:
         return entries
 
     def walk(self, subpath: str = "") -> list[FileEntry]:
-        """Recursively walk all files under the share."""
+        """Recursively walk all files under the share, collapsing BDMV structures."""
         all_files: list[FileEntry] = []
         stack = [subpath]
 
         while stack:
             current = stack.pop()
             entries = self.list_files(current)
+
+            subdirs = {e.name: e for e in entries if e.is_dir}
+            if "BDMV" in subdirs:
+                bdmv_entry = self._resolve_bdmv(current)
+                if bdmv_entry:
+                    all_files.append(bdmv_entry)
+                    continue
+
             for entry in entries:
                 if entry.is_dir:
                     stack.append(entry.path)
@@ -85,6 +98,28 @@ class SmbSource:
                     all_files.append(entry)
 
         return all_files
+
+    def _resolve_bdmv(self, folder_path: str) -> FileEntry | None:
+        """Find the largest .m2ts in BDMV/STREAM and return it as a single entry."""
+        stream_path = f"{folder_path}/BDMV/STREAM" if folder_path else "BDMV/STREAM"
+        try:
+            stream_entries = self.list_files(stream_path)
+        except Exception:
+            return None
+
+        m2ts = [e for e in stream_entries if not e.is_dir and e.name.endswith(".m2ts")]
+        if not m2ts:
+            return None
+
+        largest = max(m2ts, key=lambda e: e.size)
+        folder_name = folder_path.split("/")[-1] if "/" in folder_path else folder_path
+        return FileEntry(
+            path=largest.path,
+            name=folder_name or largest.name,
+            size=largest.size,
+            mtime=largest.mtime,
+            is_dir=False,
+        )
 
     def open_file(self, relative_path: str, offset: int = 0):
         """Open a file for reading. Returns a file-like object."""

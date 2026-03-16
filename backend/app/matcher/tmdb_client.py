@@ -10,17 +10,24 @@ from app.utils.logging import get_logger
 
 log = get_logger(__name__)
 
+import re
+
 TMDB_BASE = "https://api.themoviedb.org/3"
 TMDB_IMG_BASE = "https://image.tmdb.org/t/p"
 _rate_lock = asyncio.Lock()
 _last_request_time: float = 0
+_NON_LATIN_RE = re.compile(r"[^\x00-\x7F]")
+
+
+def _has_non_latin(text: str) -> bool:
+    return bool(_NON_LATIN_RE.search(text))
 
 
 class TmdbClient:
     def __init__(self, config: TmdbConfig):
         self._api_key = config.api_key
         self._language = config.language
-        self._client = httpx.AsyncClient(timeout=15.0)
+        self._client = httpx.AsyncClient(timeout=15.0, verify=False)
 
     async def close(self) -> None:
         await self._client.aclose()
@@ -47,15 +54,25 @@ class TmdbClient:
         params: dict[str, Any] = {"query": title}
         if year:
             params["year"] = year
-        data = await self._get("search/movie", params)
-        return data.get("results", [])
+        lang = "ru" if _has_non_latin(title) else self._language
+        data = await self._get("search/movie", {**params, "language": lang})
+        results = data.get("results", [])
+        if not results and lang != self._language:
+            data = await self._get("search/movie", {**params, "language": self._language})
+            results = data.get("results", [])
+        return results
 
     async def search_tv(self, title: str, year: int | None = None) -> list[dict]:
         params: dict[str, Any] = {"query": title}
         if year:
             params["first_air_date_year"] = year
-        data = await self._get("search/tv", params)
-        return data.get("results", [])
+        lang = "ru" if _has_non_latin(title) else self._language
+        data = await self._get("search/tv", {**params, "language": lang})
+        results = data.get("results", [])
+        if not results and lang != self._language:
+            data = await self._get("search/tv", {**params, "language": self._language})
+            results = data.get("results", [])
+        return results
 
     async def get_movie(self, movie_id: int) -> dict:
         return await self._get(f"movie/{movie_id}")
