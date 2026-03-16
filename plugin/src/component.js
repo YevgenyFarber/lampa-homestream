@@ -7,6 +7,7 @@ export function MainComponent(object) {
     var scroll, data;
 
     this.create = function () {
+        console.log('HomeStream', 'MainComponent.create called');
         var self = this;
         this.activity.loader(true);
 
@@ -31,6 +32,7 @@ export function MainComponent(object) {
     };
 
     function renderLibrary(lib, self) {
+        console.log('HomeStream', 'renderLibrary called, movies:', lib.movies ? lib.movies.length : 0);
         scroll = new Lampa.Scroll({ mask: true, over: true });
         scroll.minus();
         html.append(scroll.render(true));
