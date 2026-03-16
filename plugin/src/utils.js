@@ -19,6 +19,38 @@ export function formatFileSize(bytes) {
     return size.toFixed(1) + ' ' + units[i];
 }
 
+/**
+ * Play a video URL using the external/third-party player on Android,
+ * falling back to Lampa's built-in player on other platforms.
+ */
+export function playExternal(url, title) {
+    if (typeof AndroidJS !== 'undefined' && AndroidJS.openPlayer) {
+        var json = JSON.stringify({ url: url, title: title || '' });
+        AndroidJS.openPlayer(url, json);
+    } else {
+        Lampa.Player.play({ title: title || '', url: url });
+    }
+}
+
+/**
+ * Play a video with playlist support via external player.
+ */
+export function playExternalWithPlaylist(url, title, playlist) {
+    if (typeof AndroidJS !== 'undefined' && AndroidJS.openPlayer) {
+        var json = JSON.stringify({
+            url: url,
+            title: title || '',
+            playlist: playlist || []
+        });
+        AndroidJS.openPlayer(url, json);
+    } else {
+        Lampa.Player.play({ title: title || '', url: url });
+        if (playlist && playlist.length) {
+            Lampa.Player.playlist(playlist);
+        }
+    }
+}
+
 export function debounce(fn, delay) {
     var timer;
     return function () {

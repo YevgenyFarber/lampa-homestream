@@ -1,6 +1,6 @@
 import { PLUGIN_COMPONENT } from './constants';
 import { getUnmatched, streamUrl } from './api-client';
-import { formatFileSize } from './utils';
+import { formatFileSize, playExternal } from './utils';
 
 export function UnmatchedComponent(object) {
     var html = Lampa.Template.js(PLUGIN_COMPONENT + '_main');
@@ -31,7 +31,7 @@ export function UnmatchedComponent(object) {
 
     function renderFiles(files, self) {
         scroll = new Lampa.Scroll({ mask: true, over: true });
-        body.append(scroll.render(true));
+        body.append(scroll.render());
 
         if (!files || !files.length) {
             var empty = new Lampa.Empty({ descr: Lampa.Lang.translate('local_media_empty_library') });
@@ -46,10 +46,7 @@ export function UnmatchedComponent(object) {
             item.find('.lm-unmatched__size').text(formatFileSize(file.file_size));
 
             item.on('hover:enter', function () {
-                Lampa.Player.play({
-                    title: file.file_name || file.file_path,
-                    url: streamUrl(file.id)
-                });
+                playExternal(streamUrl(file.id), file.file_name || file.file_path);
             });
 
             item.on('hover:focus', function () {

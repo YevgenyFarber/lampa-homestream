@@ -1,5 +1,5 @@
 import { getLibrary, streamUrl } from './api-client';
-import { getBackendUrl } from './utils';
+import { getBackendUrl, playExternal } from './utils';
 
 /**
  * Injects a "Play Local" button into native Lampa TMDB detail pages
@@ -39,10 +39,7 @@ export function registerPlayButton() {
             '</div>');
 
             btn.on('hover:enter', function () {
-                Lampa.Player.play({
-                    title: localItem.title || card.title || card.name,
-                    url: streamUrl(localItem.id)
-                });
+                playExternal(streamUrl(localItem.id), localItem.title || card.title || card.name);
             });
 
             btnArea.append(btn);

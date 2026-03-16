@@ -1,6 +1,6 @@
 import { PLUGIN_COMPONENT, PLUGIN_COMPONENT_EPISODES, PLUGIN_COMPONENT_UNMATCHED } from './constants';
 import { getLibrary, streamUrl } from './api-client';
-import { getBackendUrl, formatFileSize } from './utils';
+import { getBackendUrl, formatFileSize, playExternal } from './utils';
 
 export function MainComponent(object) {
     var html = Lampa.Template.js(PLUGIN_COMPONENT + '_main');
@@ -33,7 +33,7 @@ export function MainComponent(object) {
 
     function renderLibrary(lib, self) {
         scroll = new Lampa.Scroll({ mask: true, over: true });
-        body.append(scroll.render(true));
+        body.append(scroll.render());
 
         var hasContent = false;
 
@@ -127,10 +127,7 @@ export function MainComponent(object) {
                     }
                 });
             } else {
-                Lampa.Player.play({
-                    title: item.title || item.file_name,
-                    url: streamUrl(item.id)
-                });
+                playExternal(streamUrl(item.id), item.title || item.file_name);
             }
         });
 

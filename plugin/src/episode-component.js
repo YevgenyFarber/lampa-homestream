@@ -1,6 +1,6 @@
 import { PLUGIN_COMPONENT, PLUGIN_COMPONENT_EPISODES } from './constants';
 import { getEpisodes, streamUrl } from './api-client';
-import { formatFileSize } from './utils';
+import { formatFileSize, playExternalWithPlaylist } from './utils';
 
 export function EpisodeComponent(object) {
     var html = Lampa.Template.js(PLUGIN_COMPONENT + '_main');
@@ -43,7 +43,7 @@ export function EpisodeComponent(object) {
 
     function renderEpisodes(data, self) {
         scroll = new Lampa.Scroll({ mask: true, over: true });
-        body.append(scroll.render(true));
+        body.append(scroll.render());
 
         if (show.season_count && show.season_count > 1) {
             for (var s = 1; s <= show.season_count; s++) {
@@ -93,8 +93,7 @@ export function EpisodeComponent(object) {
             item.find('.lm-episode__info').text(info);
 
             item.on('hover:enter', function () {
-                Lampa.Player.play(playlist[idx]);
-                Lampa.Player.playlist(playlist);
+                playExternalWithPlaylist(playlist[idx].url, playlist[idx].title, playlist);
             });
 
             item.on('hover:focus', function () {
