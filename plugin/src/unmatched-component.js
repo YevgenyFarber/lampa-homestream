@@ -65,22 +65,31 @@ export function UnmatchedComponent(object) {
     this.start = function () {
         if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
 
+        var target = scroll ? scroll.render() : html;
+
         Lampa.Controller.add('content', {
-            invisible: true,
             toggle: function () {
-                Lampa.Controller.collectionSet(html);
-                Lampa.Controller.collectionFocus(false, html);
+                Lampa.Controller.collectionSet(target);
+                Lampa.Controller.collectionFocus(false, target);
             },
             left: function () {
-                if (Navigator.canmove('left')) Navigator.move('left');
+                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('left'))
+                    Lampa.Controller.enabled().move('left');
                 else Lampa.Controller.toggle('menu');
             },
             up: function () {
-                if (Navigator.canmove('up')) Navigator.move('up');
+                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('up'))
+                    Lampa.Controller.enabled().move('up');
                 else Lampa.Controller.toggle('head');
             },
-            right: function () { Navigator.move('right'); },
-            down: function () { Navigator.move('down'); },
+            right: function () {
+                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('right'))
+                    Lampa.Controller.enabled().move('right');
+            },
+            down: function () {
+                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('down'))
+                    Lampa.Controller.enabled().move('down');
+            },
             back: function () { Lampa.Activity.backward(); }
         });
         Lampa.Controller.toggle('content');

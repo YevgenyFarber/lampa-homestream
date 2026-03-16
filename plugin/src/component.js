@@ -54,11 +54,9 @@ export function MainComponent(object) {
                 Lampa.Lang.translate('local_media_unmatched') + ' (' + lib.unmatched.length + ')'
             );
 
-            var unmatchedBtn = document.createElement('div');
-            unmatchedBtn.className = 'lm-card selector';
-            unmatchedBtn.style.cssText = 'background:#404040;padding:1.5em;border-radius:0.6em;width:auto;float:none;display:inline-block;';
-            unmatchedBtn.textContent = Lampa.Lang.translate('local_media_unmatched') + ' →';
-            unmatchedBtn.addEventListener('hover:enter', function () {
+            var unmatchedBtn = $('<div class="lm-card selector" style="background:#404040;padding:1.5em;border-radius:0.6em;width:auto;float:none;display:inline-block;"></div>');
+            unmatchedBtn.text(Lampa.Lang.translate('local_media_unmatched') + ' →');
+            unmatchedBtn.on('hover:enter', function () {
                 Lampa.Activity.push({
                     url: '',
                     title: Lampa.Lang.translate('local_media_unmatched'),
@@ -170,22 +168,31 @@ export function MainComponent(object) {
         if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
         this.background();
 
+        var target = scroll ? scroll.render() : html;
+
         Lampa.Controller.add('content', {
-            invisible: true,
             toggle: function () {
-                Lampa.Controller.collectionSet(html);
-                Lampa.Controller.collectionFocus(false, html);
+                Lampa.Controller.collectionSet(target);
+                Lampa.Controller.collectionFocus(false, target);
             },
             left: function () {
-                if (Navigator.canmove('left')) Navigator.move('left');
+                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('left'))
+                    Lampa.Controller.enabled().move('left');
                 else Lampa.Controller.toggle('menu');
             },
             up: function () {
-                if (Navigator.canmove('up')) Navigator.move('up');
+                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('up'))
+                    Lampa.Controller.enabled().move('up');
                 else Lampa.Controller.toggle('head');
             },
-            right: function () { Navigator.move('right'); },
-            down: function () { Navigator.move('down'); },
+            right: function () {
+                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('right'))
+                    Lampa.Controller.enabled().move('right');
+            },
+            down: function () {
+                if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('down'))
+                    Lampa.Controller.enabled().move('down');
+            },
             back: function () { Lampa.Activity.backward(); }
         });
         Lampa.Controller.toggle('content');
