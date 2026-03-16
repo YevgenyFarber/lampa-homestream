@@ -1,0 +1,15 @@
+services:
+  homestream:
+    build: ./backend
+    container_name: homestream
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config:/config
+      - homestream-data:/data
+    environment:
+      - TZ=Europe/Moscow
+
+volumes:
+  homestream-data:
