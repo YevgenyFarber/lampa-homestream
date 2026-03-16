@@ -468,7 +468,9 @@
                 var card = Lampa.Template.js(PLUGIN_COMPONENT + '_card');
 
                 if (item.poster_url) {
-                    card.find('.lm-card__img').css('background-image', 'url(' + item.poster_url + ')');
+                    var imgEl = card.find('.lm-card__img');
+                    var el = imgEl[0] || imgEl;
+                    if (el && el.style) el.style.backgroundImage = 'url(' + item.poster_url + ')';
                 }
 
                 card.find('.lm-card__title').text(item.title || item.file_name || 'Unknown');
