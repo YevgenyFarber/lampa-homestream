@@ -48,7 +48,9 @@ class Library:
             for e in eps:
                 if e.get("parsed_season"):
                     seasons.add(e["parsed_season"])
-            show["season_count"] = len(seasons) if seasons else 1
+            sorted_seasons = sorted(seasons) if seasons else [1]
+            show["season_count"] = len(sorted_seasons)
+            show["seasons"] = sorted_seasons
             show["episode_count"] = len(eps)
 
         result = list(shows_map.values())
@@ -140,6 +142,7 @@ def _build_show_item(file_row: dict, meta: dict, tmdb_cache: dict | None,
         "vote_average": meta.get("vote_average"),
         "media_type": "tv",
         "season_count": 0,
+        "seasons": [],
         "episode_count": 0,
         "match_confidence": file_row.get("confidence", 0),
         "match_method": file_row.get("match_method", "auto"),

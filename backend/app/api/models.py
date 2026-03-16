@@ -62,6 +62,7 @@ class ShowItem(BaseModel):
     vote_average: float | None = None
     media_type: str = "tv"
     season_count: int = 0
+    seasons: list[int] = []
     episode_count: int = 0
     match_confidence: float = 0.0
     match_method: str = "auto"

@@ -54,18 +54,19 @@ export function registerPlayButton() {
 }
 
 function showSeasonPicker(show) {
-    var seasonCount = show.season_count || 1;
+    var seasons = show.seasons || [];
+    if (!seasons.length) seasons = [1];
 
-    if (seasonCount === 1) {
-        loadAndShowEpisodes(show, 1);
+    if (seasons.length === 1) {
+        loadAndShowEpisodes(show, seasons[0]);
         return;
     }
 
     var items = [];
-    for (var s = 1; s <= seasonCount; s++) {
+    for (var i = 0; i < seasons.length; i++) {
         items.push({
-            title: Lampa.Lang.translate('local_media_season') + ' ' + s,
-            season: s
+            title: Lampa.Lang.translate('local_media_season') + ' ' + seasons[i],
+            season: seasons[i]
         });
     }
 
