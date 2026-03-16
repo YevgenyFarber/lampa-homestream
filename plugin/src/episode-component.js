@@ -6,7 +6,6 @@ export function EpisodeComponent(object) {
     var html = $('<div></div>');
     var scroll;
     var show;
-    var last;
 
     this.create = function () {
         var self = this;
@@ -35,7 +34,6 @@ export function EpisodeComponent(object) {
                 errEl.find('.lm-error__retry').on('hover:enter', function () {
                     html.empty();
                     scroll = null;
-                    last = null;
                     self.activity.loader(true);
                     loadSeasons(self, season);
                 });
@@ -46,10 +44,9 @@ export function EpisodeComponent(object) {
     function renderEpisodes(data, self) {
         html.empty();
         scroll = null;
-        last = null;
 
-        scroll = new Lampa.Scroll({ mask: true, over: true, step: 300 });
-        var body = $('<div class="lm-episodes-content"></div>');
+        scroll = new Lampa.Scroll({ mask: true, over: true });
+        html.append(scroll.render(true));
 
         if (show.season_count && show.season_count > 1) {
             for (var s = 1; s <= show.season_count; s++) {
@@ -61,15 +58,13 @@ export function EpisodeComponent(object) {
                     btn.on('hover:enter', function () {
                         html.empty();
                         scroll = null;
-                        last = null;
                         self.activity.loader(true);
                         loadSeasons(self, sn);
                     });
                     btn.on('hover:focus', function () {
-                        last = $(this)[0];
-                        scroll.update($(this));
+                        scroll.update(btn);
                     });
-                    body.append(btn);
+                    scroll.append(btn);
                 })(s);
             }
         }
@@ -105,8 +100,7 @@ export function EpisodeComponent(object) {
             });
 
             item.on('hover:focus', function () {
-                last = $(this)[0];
-                scroll.update($(this));
+                scroll.update(item);
                 if (ep.still_url) {
                     Lampa.Background.immediately(ep.still_url);
                 } else if (show.backdrop_url) {
@@ -114,12 +108,8 @@ export function EpisodeComponent(object) {
                 }
             });
 
-            body.append(item);
+            scroll.append(item);
         });
-
-        scroll.minus();
-        scroll.append(body);
-        html.append(scroll.render());
 
         self.activity.toggle();
     }
@@ -135,24 +125,24 @@ export function EpisodeComponent(object) {
         this.background();
 
         Lampa.Controller.add('content', {
-            link: this,
+            invisible: true,
             toggle: function () {
-                Lampa.Controller.collectionSet(scroll.render());
-                Lampa.Controller.collectionFocus(last || false, scroll.render());
+                Lampa.Controller.collectionSet(html);
+                Lampa.Controller.collectionFocus(false, html);
             },
             left: function () {
-                if (typeof Navigator !== 'undefined' && Navigator.canmove('left')) Navigator.move('left');
+                if (Navigator.canmove('left')) Navigator.move('left');
                 else Lampa.Controller.toggle('menu');
             },
             up: function () {
-                if (typeof Navigator !== 'undefined' && Navigator.canmove('up')) Navigator.move('up');
+                if (Navigator.canmove('up')) Navigator.move('up');
                 else Lampa.Controller.toggle('head');
             },
             right: function () {
-                if (typeof Navigator !== 'undefined' && Navigator.canmove('right')) Navigator.move('right');
+                Navigator.move('right');
             },
             down: function () {
-                if (typeof Navigator !== 'undefined' && Navigator.canmove('down')) Navigator.move('down');
+                Navigator.move('down');
             },
             back: function () { Lampa.Activity.backward(); }
         });

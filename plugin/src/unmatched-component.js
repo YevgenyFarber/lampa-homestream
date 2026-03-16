@@ -5,7 +5,6 @@ import { formatFileSize, playExternal } from './utils';
 export function UnmatchedComponent(object) {
     var html = $('<div></div>');
     var scroll;
-    var last;
 
     this.create = function () {
         var self = this;
@@ -24,7 +23,6 @@ export function UnmatchedComponent(object) {
                 errEl.find('.lm-error__retry').on('hover:enter', function () {
                     html.empty();
                     scroll = null;
-                    last = null;
                     self.create();
                 });
                 html.append(errEl);
@@ -32,12 +30,12 @@ export function UnmatchedComponent(object) {
     };
 
     function renderFiles(files, self) {
-        scroll = new Lampa.Scroll({ mask: true, over: true, step: 300 });
-        var body = $('<div class="lm-unmatched-content"></div>');
+        scroll = new Lampa.Scroll({ mask: true, over: true });
+        html.append(scroll.render(true));
 
         if (!files || !files.length) {
             var empty = new Lampa.Empty({ descr: Lampa.Lang.translate('local_media_empty_library') });
-            body.append(empty.render(true));
+            scroll.append(empty.render(true));
         } else {
             files.forEach(function (file) {
                 var item = Lampa.Template.js(PLUGIN_COMPONENT + '_unmatched_item');
@@ -49,17 +47,12 @@ export function UnmatchedComponent(object) {
                 });
 
                 item.on('hover:focus', function () {
-                    last = $(this)[0];
-                    scroll.update($(this));
+                    scroll.update(item);
                 });
 
-                body.append(item);
+                scroll.append(item);
             });
         }
-
-        scroll.minus();
-        scroll.append(body);
-        html.append(scroll.render());
 
         self.activity.toggle();
     }
@@ -68,24 +61,24 @@ export function UnmatchedComponent(object) {
         if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
 
         Lampa.Controller.add('content', {
-            link: this,
+            invisible: true,
             toggle: function () {
-                Lampa.Controller.collectionSet(scroll.render());
-                Lampa.Controller.collectionFocus(last || false, scroll.render());
+                Lampa.Controller.collectionSet(html);
+                Lampa.Controller.collectionFocus(false, html);
             },
             left: function () {
-                if (typeof Navigator !== 'undefined' && Navigator.canmove('left')) Navigator.move('left');
+                if (Navigator.canmove('left')) Navigator.move('left');
                 else Lampa.Controller.toggle('menu');
             },
             up: function () {
-                if (typeof Navigator !== 'undefined' && Navigator.canmove('up')) Navigator.move('up');
+                if (Navigator.canmove('up')) Navigator.move('up');
                 else Lampa.Controller.toggle('head');
             },
             right: function () {
-                if (typeof Navigator !== 'undefined' && Navigator.canmove('right')) Navigator.move('right');
+                Navigator.move('right');
             },
             down: function () {
-                if (typeof Navigator !== 'undefined' && Navigator.canmove('down')) Navigator.move('down');
+                Navigator.move('down');
             },
             back: function () { Lampa.Activity.backward(); }
         });
