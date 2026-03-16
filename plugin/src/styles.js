@@ -17,10 +17,11 @@ export function registerStyles() {
     '.lm-card__img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; background-repeat: no-repeat; }' +
     '.lm-card__title { font-size: 1.1em; font-weight: 500; margin-top: 0.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; }' +
     '.lm-card__info { font-size: 0.9em; color: rgba(255,255,255,0.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
-    '.lm-card.focus .lm-card__img-box::after, .lm-card.hover .lm-card__img-box::after {' +
-        'content: ""; position: absolute; top: -0.3em; left: -0.3em; right: -0.3em; bottom: -0.3em;' +
-        'border: 0.2em solid #fff; border-radius: 0.7em; pointer-events: none; z-index: 1;' +
+    '.lm-card.focus::after, .lm-card.hover::after {' +
+        'content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;' +
+        'border: 0.3em solid #fff; border-radius: 0.7em; pointer-events: none; z-index: 2;' +
     '}' +
+    '.lm-card.focus .lm-card__title, .lm-card.hover .lm-card__title { color: #fff; }' +
 
     // Episode list
     '.lm-episode { display: flex; align-items: center; padding: 1em 1.5em; margin: 0.3em 0; background: #2a2a2a; border-radius: 0.6em; position: relative; }' +
