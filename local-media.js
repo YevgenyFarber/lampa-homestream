@@ -435,11 +435,9 @@
                     Lampa.Lang.translate('local_media_unmatched') + ' (' + lib.unmatched.length + ')'
                 );
 
-                var unmatchedBtn = document.createElement('div');
-                unmatchedBtn.className = 'lm-card selector';
-                unmatchedBtn.style.cssText = 'background:#404040;padding:1.5em;border-radius:0.6em;width:auto;float:none;display:inline-block;';
-                unmatchedBtn.textContent = Lampa.Lang.translate('local_media_unmatched') + ' →';
-                unmatchedBtn.addEventListener('hover:enter', function () {
+                var unmatchedBtn = $('<div class="lm-card selector" style="background:#404040;padding:1.5em;border-radius:0.6em;width:auto;float:none;display:inline-block;"></div>');
+                unmatchedBtn.text(Lampa.Lang.translate('local_media_unmatched') + ' →');
+                unmatchedBtn.on('hover:enter', function () {
                     Lampa.Activity.push({
                         url: '',
                         title: Lampa.Lang.translate('local_media_unmatched'),
@@ -551,22 +549,31 @@
             if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
             this.background();
 
+            var target = scroll ? scroll.render() : html;
+
             Lampa.Controller.add('content', {
-                invisible: true,
                 toggle: function () {
-                    Lampa.Controller.collectionSet(html);
-                    Lampa.Controller.collectionFocus(false, html);
+                    Lampa.Controller.collectionSet(target);
+                    Lampa.Controller.collectionFocus(false, target);
                 },
                 left: function () {
-                    if (Navigator.canmove('left')) Navigator.move('left');
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('left'))
+                        Lampa.Controller.enabled().move('left');
                     else Lampa.Controller.toggle('menu');
                 },
                 up: function () {
-                    if (Navigator.canmove('up')) Navigator.move('up');
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('up'))
+                        Lampa.Controller.enabled().move('up');
                     else Lampa.Controller.toggle('head');
                 },
-                right: function () { Navigator.move('right'); },
-                down: function () { Navigator.move('down'); },
+                right: function () {
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('right'))
+                        Lampa.Controller.enabled().move('right');
+                },
+                down: function () {
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('down'))
+                        Lampa.Controller.enabled().move('down');
+                },
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
@@ -625,26 +632,21 @@
             body.append(scroll.render(true));
 
             if (show.season_count && show.season_count > 1) {
-                var seasonNav = document.createElement('div');
-                seasonNav.style.cssText = 'display:flex;flex-wrap:wrap;padding:0.5em 0;margin-bottom:1em;';
+                var seasonNav = $('<div style="display:flex;flex-wrap:wrap;padding:0.5em 0;margin-bottom:1em;"></div>');
 
                 for (var s = 1; s <= show.season_count; s++) {
                     (function (sn) {
-                        var btn = document.createElement('div');
-                        btn.className = 'selector';
-                        btn.style.cssText = 'padding:0.6em 1.2em;margin:0.3em;background:#404040;border-radius:0.4em;color:#fff;font-size:1.1em;';
-                        btn.textContent = Lampa.Lang.translate('local_media_season') + ' ' + sn;
-                        if (sn === (data.season || 1)) {
-                            btn.style.background = '#fff';
-                            btn.style.color = '#000';
-                        }
-                        btn.addEventListener('hover:enter', function () {
+                        var active = sn === (data.season || 1);
+                        var bg = active ? 'background:#fff;color:#000;' : 'background:#404040;color:#fff;';
+                        var btn = $('<div class="selector" style="padding:0.6em 1.2em;margin:0.3em;border-radius:0.4em;font-size:1.1em;' + bg + '"></div>');
+                        btn.text(Lampa.Lang.translate('local_media_season') + ' ' + sn);
+                        btn.on('hover:enter', function () {
                             body.empty();
                             scroll = null;
                             self.activity.loader(true);
                             loadSeasons(self, sn);
                         });
-                        seasonNav.appendChild(btn);
+                        seasonNav.append(btn);
                     })(s);
                 }
                 scroll.append(seasonNav);
@@ -706,22 +708,31 @@
             if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
             this.background();
 
+            var target = scroll ? scroll.render() : html;
+
             Lampa.Controller.add('content', {
-                invisible: true,
                 toggle: function () {
-                    Lampa.Controller.collectionSet(html);
-                    Lampa.Controller.collectionFocus(false, html);
+                    Lampa.Controller.collectionSet(target);
+                    Lampa.Controller.collectionFocus(false, target);
                 },
                 left: function () {
-                    if (Navigator.canmove('left')) Navigator.move('left');
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('left'))
+                        Lampa.Controller.enabled().move('left');
                     else Lampa.Controller.toggle('menu');
                 },
                 up: function () {
-                    if (Navigator.canmove('up')) Navigator.move('up');
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('up'))
+                        Lampa.Controller.enabled().move('up');
                     else Lampa.Controller.toggle('head');
                 },
-                right: function () { Navigator.move('right'); },
-                down: function () { Navigator.move('down'); },
+                right: function () {
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('right'))
+                        Lampa.Controller.enabled().move('right');
+                },
+                down: function () {
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('down'))
+                        Lampa.Controller.enabled().move('down');
+                },
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
@@ -799,22 +810,31 @@
         this.start = function () {
             if (Lampa.Activity.active() && Lampa.Activity.active().activity !== this.activity) return;
 
+            var target = scroll ? scroll.render() : html;
+
             Lampa.Controller.add('content', {
-                invisible: true,
                 toggle: function () {
-                    Lampa.Controller.collectionSet(html);
-                    Lampa.Controller.collectionFocus(false, html);
+                    Lampa.Controller.collectionSet(target);
+                    Lampa.Controller.collectionFocus(false, target);
                 },
                 left: function () {
-                    if (Navigator.canmove('left')) Navigator.move('left');
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('left'))
+                        Lampa.Controller.enabled().move('left');
                     else Lampa.Controller.toggle('menu');
                 },
                 up: function () {
-                    if (Navigator.canmove('up')) Navigator.move('up');
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('up'))
+                        Lampa.Controller.enabled().move('up');
                     else Lampa.Controller.toggle('head');
                 },
-                right: function () { Navigator.move('right'); },
-                down: function () { Navigator.move('down'); },
+                right: function () {
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('right'))
+                        Lampa.Controller.enabled().move('right');
+                },
+                down: function () {
+                    if (Lampa.Controller.enabled().canmove && Lampa.Controller.enabled().canmove('down'))
+                        Lampa.Controller.enabled().move('down');
+                },
                 back: function () { Lampa.Activity.backward(); }
             });
             Lampa.Controller.toggle('content');
