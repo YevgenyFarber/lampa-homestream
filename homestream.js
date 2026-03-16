@@ -404,6 +404,7 @@
     function MainComponent(object) {
         var html = $('<div></div>');
         var scroll;
+        var last_focused;
 
         this.create = function () {
             var self = this;
@@ -470,6 +471,7 @@
                     });
                 });
                 unmatchedBtn.on('hover:focus', function () {
+                    last_focused = unmatchedBtn;
                     scroll.update(unmatchedBtn);
                 });
                 scroll.append(unmatchedBtn);
@@ -527,6 +529,7 @@
             });
 
             card.on('hover:focus', function () {
+                last_focused = card;
                 scroll.update(card);
                 if (item.backdrop_url) {
                     Lampa.Background.immediately(item.backdrop_url);
@@ -566,7 +569,7 @@
                 invisible: true,
                 toggle: function () {
                     Lampa.Controller.collectionSet(html);
-                    Lampa.Controller.collectionFocus(false, html);
+                    Lampa.Controller.collectionFocus(last_focused || false, html);
                 },
                 left: function () {
                     if (Navigator.canmove('left')) Navigator.move('left');
