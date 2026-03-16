@@ -43,12 +43,12 @@ export function registerPlayButton() {
 
             btn.on('hover:enter', function () {
                 if (mediaType === 'tv') {
+                    Lampa.Storage.set('lm_current_show', JSON.stringify(localItem));
                     Lampa.Activity.push({
                         url: '',
                         title: (localItem.title || card.title) + ' — ' + Lampa.Lang.translate('local_media_play_local'),
                         component: PLUGIN_COMPONENT_EPISODES,
-                        page: 1,
-                        local_media_show: localItem
+                        page: 1
                     });
                 } else {
                     var hash = Lampa.Utils.hash('lm_movie_' + localItem.tmdb_id);
